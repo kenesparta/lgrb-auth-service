@@ -1,0 +1,6 @@
+services:
+  auth-service:
+    image: kenesparta/lgr-auth-service
+    restart: "always"
+    ports:
+      - "3000:3000"
