@@ -1,8 +1,8 @@
-use tokio::sync::RwLock;
-use auth_service::Application;
-use uuid::Uuid;
 use auth_service::app_state::{AppState, UserStoreType};
 use auth_service::services::HashmapUserStore;
+use auth_service::Application;
+use tokio::sync::RwLock;
+use uuid::Uuid;
 
 pub struct TestApp {
     pub address: String,

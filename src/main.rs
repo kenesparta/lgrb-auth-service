@@ -1,7 +1,7 @@
-use tokio::sync::RwLock;
 use auth_service::app_state::{AppState, UserStoreType};
-use auth_service::Application;
 use auth_service::services::HashmapUserStore;
+use auth_service::Application;
+use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
