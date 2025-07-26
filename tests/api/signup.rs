@@ -1,5 +1,6 @@
 use crate::helpers::{get_random_email, TestApp};
 use auth_service::routes::SignupResponse;
+use auth_service::ErrorResponse;
 use reqwest::StatusCode;
 
 #[tokio::test]
@@ -61,11 +62,11 @@ async fn should_return_400_if_invalid_input() {
         serde_json::json!({
             "email": get_random_email(),
             "password": "password123",
-            "2FA": true
+            "requires2FA": true
         }),
         serde_json::json!({
             "email": get_random_email(),
-            "passwords": "123123",
+            "password": "123123",
             "requires2FA": false
         }),
     ];
@@ -78,6 +79,15 @@ async fn should_return_400_if_invalid_input() {
             "Failed for input: {:?}",
             test_case
         );
+
+        assert_eq!(
+            response
+                .json::<ErrorResponse>()
+                .await
+                .expect("")
+                .error_message,
+            "Invalid credentials"
+        );
     }
 }
 
@@ -87,11 +97,21 @@ async fn should_return_409_if_email_already_exists() {
 
     let tc = serde_json::json!({
         "email": get_random_email(),
-        "passwords": "123123",
+        "password": "123123",
         "requires2FA": false
     });
 
-    app.post_signup(&tc).await;
-    let response = app.post_signup(&tc).await;
-    assert_eq!(response.status().as_u16(), StatusCode::CONFLICT,);
+    let response1 = app.post_signup(&tc).await;
+    assert_eq!(response1.status().as_u16(), StatusCode::CREATED);
+
+    let response2 = app.post_signup(&tc).await;
+    assert_eq!(response2.status().as_u16(), StatusCode::CONFLICT);
+    assert_eq!(
+        response2
+            .json::<ErrorResponse>()
+            .await
+            .expect("")
+            .error_message,
+        "User already exists"
+    );
 }
