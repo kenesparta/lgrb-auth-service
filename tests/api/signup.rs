@@ -61,11 +61,11 @@ async fn should_return_400_if_invalid_input() {
     let test_cases = [
         serde_json::json!({
             "email": get_random_email(),
-            "password": "password123",
+            "password": "",
             "requires2FA": true
         }),
         serde_json::json!({
-            "email": get_random_email(),
+            "email": "1234example.com",
             "password": "123123",
             "requires2FA": false
         }),
@@ -97,7 +97,7 @@ async fn should_return_409_if_email_already_exists() {
 
     let tc = serde_json::json!({
         "email": get_random_email(),
-        "password": "123123",
+        "password": "8FNowQhkKHcxzJg6",
         "requires2FA": false
     });
 
