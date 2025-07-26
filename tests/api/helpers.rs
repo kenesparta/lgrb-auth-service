@@ -1,4 +1,7 @@
+use auth_service::app_state::{AppState, UserStoreType};
+use auth_service::services::HashmapUserStore;
 use auth_service::Application;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
 pub struct TestApp {
@@ -8,7 +11,9 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
-        let app = Application::build("127.0.0.1:0")
+        let user_store = UserStoreType::new(RwLock::new(HashmapUserStore::default()));
+        let app_state = AppState::new(user_store);
+        let app = Application::build(app_state, "127.0.0.1:0")
             .await
             .expect("Failed to build app");
 
@@ -18,7 +23,7 @@ impl TestApp {
         let http_client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
-            .expect("Failed to create HTTP client");
+            .expect("Failed to create an HTTP client");
 
         TestApp {
             address,
