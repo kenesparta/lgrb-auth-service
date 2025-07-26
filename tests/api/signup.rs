@@ -28,3 +28,8 @@ async fn should_return_422_if_malformed_input() {
         );
     }
 }
+
+#[tokio::test]
+async fn should_return_201_if_valid_input() {
+    todo!()
+}

@@ -1,4 +1,6 @@
+mod domain;
 pub mod routes;
+mod services;
 
 use crate::routes::{health_check, login, logout, signup, verify_2fa, verify_token};
 use axum::routing::{get, post};
