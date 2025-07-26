@@ -4,3 +4,13 @@
 ### Health check
 GET {{baseUrl}}/health-check
 Content-Type: application/json
+
+### Sign Up!
+POST {{baseUrl}}/signup
+Content-Type: application/json
+
+{
+  "email": "{{$uuid}}@example.com",
+  "password": "password123",
+  "requires2FA": false
+}
