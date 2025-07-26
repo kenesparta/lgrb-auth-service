@@ -1,4 +1,4 @@
-name: Build, Test and push to Docker hub
+name: Build, Test and push to Docker hub from specific branch
 
 on:
   push:
