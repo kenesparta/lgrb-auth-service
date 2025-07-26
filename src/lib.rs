@@ -3,17 +3,44 @@ mod domain;
 pub mod routes;
 pub mod services;
 
+use crate::domain::AuthAPIError;
 use crate::routes::{health_check, login, logout, signup, verify_2fa, verify_token};
 use app_state::AppState;
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::serve::Serve;
-use axum::Router;
+use axum::{Json, Router};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use tower_http::services::ServeDir;
 
 pub struct Application {
     server: Serve<Router, Router>,
     pub address: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error_message: String,
+}
+
+impl IntoResponse for AuthAPIError {
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
+            AuthAPIError::UnexpectedError => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
+            }
+            AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
+        };
+
+        let body = Json(ErrorResponse {
+            error_message: error_message.to_string(),
+        });
+
+        (status, body).into_response()
+    }
 }
 
 impl Application {
