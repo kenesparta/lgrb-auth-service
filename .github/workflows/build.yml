@@ -1,4 +1,4 @@
-name: Build, Test and push to Docker hub
+name: Main Branch | Build, Test and Push to Docker
 
 on:
   push:
