@@ -66,18 +66,9 @@ mod tests {
         let mut hash_map_user = HashmapUserStore {
             users: HashMap::new(),
         };
-        let user_01 = User::new(
-            "973d5517-a64a-425c-9a9c-4edea6727999@example.com".to_owned(),
-            "lkVXC19llW7+il0Q".to_owned(),
-            true,
-        )
-        .unwrap();
-        let user_02 = User::new(
-            "973d5517-a64a-425c-9a9c-4edea6727999@example.com".to_owned(),
-            "3F14XASpMQ9Tw2iV".to_owned(),
-            false,
-        )
-        .unwrap();
+        let shared_email: String = SafeEmail().fake();
+        let user_01 = User::new(shared_email.clone(), FakePassword(8..20).fake(), true).unwrap();
+        let user_02 = User::new(shared_email, FakePassword(8..20).fake(), false).unwrap();
         let result1 = hash_map_user.add_user(user_01).await;
         assert!(result1.is_ok());
 
@@ -91,20 +82,21 @@ mod tests {
             users: HashMap::new(),
         };
         let user_01 = User::new(
-            "a20118e3-4063-49d4-be53-2b6bd9a8fc3c@example.com".to_owned(),
-            "u2O5+zGqn+KxzBI4".to_owned(),
+            SafeEmail().fake(),
+            FakePassword(8..20).fake(),
             true,
         )
         .unwrap();
+        let user_02_shared: String = SafeEmail().fake();
         let user_02 = User::new(
-            "3e5f8404-ce14-4bcc-aaee-e7201ea6bf18@example.com".to_owned(),
-            "ps5ZbKwSI4VhQ6Ti".to_owned(),
+            user_02_shared.clone(),
+            FakePassword(8..20).fake(),
             false,
         )
         .unwrap();
         let user_03 = User::new(
-            "22212582-7517-4a68-9072-780d05ce508a@example.com".to_owned(),
-            "nmTsz8WgA9stMWcR".to_owned(),
+            SafeEmail().fake(),
+            FakePassword(8..20).fake(),
             false,
         )
         .unwrap();
@@ -120,14 +112,14 @@ mod tests {
 
         let user_found = hash_map_user
             .get_user(
-                &Email::new("3e5f8404-ce14-4bcc-aaee-e7201ea6bf18@example.com".to_owned()).unwrap(),
+                &Email::new(user_02_shared).unwrap(),
             )
             .await;
         assert_eq!(user_found, Ok(&user_02));
 
         let user_not_found = hash_map_user
             .get_user(
-                &Email::new("99409174-5b16-4a0d-be9f-9e6bb62e840c@example.com".to_owned()).unwrap(),
+                &Email::new(SafeEmail().fake()).unwrap(),
             )
             .await;
         assert_eq!(user_not_found, Err(UserStoreError::UserNotFound));
@@ -138,9 +130,12 @@ mod tests {
         let mut hash_map_user = HashmapUserStore {
             users: HashMap::new(),
         };
+
+        let user_01_email_shared: String = SafeEmail().fake();
+        let user_01_password_shared: String = FakePassword(8..20).fake();
         let user_01 = User::new(
-            "7cdbaaa9-1e78-4682-8294-0303edeb49bb@example.com".to_owned(),
-            "WIDXR83rXJuxTuGY".to_owned(),
+            user_01_email_shared.clone(),
+            user_01_password_shared.clone(),
             true,
         )
         .unwrap();
@@ -150,24 +145,24 @@ mod tests {
 
         let validation_failed = hash_map_user
             .validate_user(
-                &Email::new("ad0ec61e-2273-4e16-9170-266261d22d87@example.com".to_owned()).unwrap(),
-                &Password::new("eDAyfl3yWjaky9S+".to_owned()).unwrap(),
+                &Email::new(SafeEmail().fake()).unwrap(),
+                &Password::new(FakePassword(8..20).fake()).unwrap(),
             )
             .await;
         assert_eq!(validation_failed, Err(UserStoreError::UserNotFound));
 
         let validation_failed = hash_map_user
             .validate_user(
-                &Email::new("7cdbaaa9-1e78-4682-8294-0303edeb49bb@example.com".to_owned()).unwrap(),
-                &Password::new("j6Vl9u4i1dECShDs".to_owned()).unwrap(),
+                &Email::new(user_01_email_shared.clone()).unwrap(),
+                &Password::new(FakePassword(8..20).fake()).unwrap(),
             )
             .await;
         assert_eq!(validation_failed, Err(UserStoreError::InvalidCredentials));
 
         let validation_ok = hash_map_user
             .validate_user(
-                &Email::new("7cdbaaa9-1e78-4682-8294-0303edeb49bb@example.com".to_owned()).unwrap(),
-                &Password::new("WIDXR83rXJuxTuGY".to_owned()).unwrap(),
+                &Email::new(user_01_email_shared).unwrap(),
+                &Password::new(user_01_password_shared).unwrap(),
             )
             .await;
         assert!(validation_ok.is_ok());
