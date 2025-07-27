@@ -1,23 +1,16 @@
+use crate::domain::data_stores::{UserStore, UserStoreError};
+use crate::domain::User;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-
-use crate::domain::User;
-
-#[derive(Debug, PartialEq)]
-pub enum UserStoreError {
-    UserAlreadyExists,
-    UserNotFound,
-    InvalidCredentials,
-    UnexpectedError,
-}
 
 #[derive(Default)]
 pub struct HashmapUserStore {
     users: HashMap<String, User>,
 }
 
-impl HashmapUserStore {
-    pub fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
+#[async_trait::async_trait]
+impl UserStore for HashmapUserStore {
+    async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         match self.users.entry(user.email().to_owned()) {
             Entry::Occupied(_) => Err(UserStoreError::UserAlreadyExists),
             Entry::Vacant(entry) => {
@@ -27,12 +20,13 @@ impl HashmapUserStore {
         }
     }
 
-    pub fn get_user(&self, email: &str) -> Result<&User, UserStoreError> {
+    async fn get_user(&self, email: &str) -> Result<&User, UserStoreError> {
         self.users.get(email).ok_or(UserStoreError::UserNotFound)
     }
 
-    pub fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
-        if self.get_user(email)?.password() != password {
+    async fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
+        let user = self.get_user(email).await?;
+        if user.password() != password {
             return Err(UserStoreError::InvalidCredentials);
         }
 
@@ -54,7 +48,7 @@ mod tests {
             "YMchRXmRYU7KId62".to_owned(),
             true,
         );
-        let result = hash_map_user.add_user(user_01);
+        let result = hash_map_user.add_user(user_01).await;
         assert!(result.is_ok());
     }
 
@@ -73,10 +67,10 @@ mod tests {
             "3F14XASpMQ9Tw2iV".to_owned(),
             false,
         );
-        let result1 = hash_map_user.add_user(user_01);
+        let result1 = hash_map_user.add_user(user_01).await;
         assert!(result1.is_ok());
 
-        let result = hash_map_user.add_user(user_02);
+        let result = hash_map_user.add_user(user_02).await;
         assert_eq!(result, Err(UserStoreError::UserAlreadyExists));
     }
 
@@ -101,20 +95,23 @@ mod tests {
             false,
         );
 
-        let result_1 = hash_map_user.add_user(user_01);
+        let result_1 = hash_map_user.add_user(user_01).await;
         assert!(result_1.is_ok());
 
-        let result_2 = hash_map_user.add_user(user_02.clone());
+        let result_2 = hash_map_user.add_user(user_02.clone()).await;
         assert!(result_2.is_ok());
 
-        let result_3 = hash_map_user.add_user(user_03);
+        let result_3 = hash_map_user.add_user(user_03).await;
         assert!(result_3.is_ok());
 
-        let user_found = hash_map_user.get_user("3e5f8404-ce14-4bcc-aaee-e7201ea6bf18@example.com");
+        let user_found = hash_map_user
+            .get_user("3e5f8404-ce14-4bcc-aaee-e7201ea6bf18@example.com")
+            .await;
         assert_eq!(user_found, Ok(&user_02));
 
-        let user_not_found =
-            hash_map_user.get_user("99409174-5b16-4a0d-be9f-9e6bb62e840c@example.com");
+        let user_not_found = hash_map_user
+            .get_user("99409174-5b16-4a0d-be9f-9e6bb62e840c@example.com")
+            .await;
         assert_eq!(user_not_found, Err(UserStoreError::UserNotFound));
     }
 
@@ -129,25 +126,31 @@ mod tests {
             true,
         );
 
-        let result_1 = hash_map_user.add_user(user_01);
+        let result_1 = hash_map_user.add_user(user_01).await;
         assert!(result_1.is_ok());
 
-        let validation_failed = hash_map_user.validate_user(
-            "ad0ec61e-2273-4e16-9170-266261d22d87@example.com",
-            "eDAyfl3yWjaky9S+",
-        );
+        let validation_failed = hash_map_user
+            .validate_user(
+                "ad0ec61e-2273-4e16-9170-266261d22d87@example.com",
+                "eDAyfl3yWjaky9S+",
+            )
+            .await;
         assert_eq!(validation_failed, Err(UserStoreError::UserNotFound));
 
-        let validation_failed = hash_map_user.validate_user(
-            "7cdbaaa9-1e78-4682-8294-0303edeb49bb@example.com",
-            "j6Vl9u4i1dECShDs",
-        );
+        let validation_failed = hash_map_user
+            .validate_user(
+                "7cdbaaa9-1e78-4682-8294-0303edeb49bb@example.com",
+                "j6Vl9u4i1dECShDs",
+            )
+            .await;
         assert_eq!(validation_failed, Err(UserStoreError::InvalidCredentials));
 
-        let validation_ok = hash_map_user.validate_user(
-            "7cdbaaa9-1e78-4682-8294-0303edeb49bb@example.com",
-            "WIDXR83rXJuxTuGY",
-        );
+        let validation_ok = hash_map_user
+            .validate_user(
+                "7cdbaaa9-1e78-4682-8294-0303edeb49bb@example.com",
+                "WIDXR83rXJuxTuGY",
+            )
+            .await;
         assert!(validation_ok.is_ok());
     }
 }
