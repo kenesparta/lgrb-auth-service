@@ -1,3 +1,4 @@
+pub mod data_stores;
 mod error;
 mod user;
 

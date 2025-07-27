@@ -2,7 +2,7 @@ name: Build, Test and push to Docker hub
 
 on:
   push:
-    branch:
+    branches:
       - main
   workflow_dispatch:
 
