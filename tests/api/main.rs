@@ -1,3 +1,4 @@
+mod delete_account;
 mod helpers;
 mod login;
 mod logout;

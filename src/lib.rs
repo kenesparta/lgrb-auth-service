@@ -4,11 +4,13 @@ pub mod routes;
 pub mod services;
 
 use crate::domain::AuthAPIError;
-use crate::routes::{health_check, login, logout, signup, verify_2fa, verify_token};
+use crate::routes::{
+    delete_account, health_check, login, logout, signup, verify_2fa, verify_token,
+};
 use app_state::AppState;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::serve::Serve;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
@@ -50,6 +52,7 @@ impl Application {
             .nest_service("/", ServeDir::new("assets"))
             .route("/health-check", get(health_check))
             .route("/signup", post(signup))
+            .route("/delete-account", delete(delete_account))
             .route("/login", post(login))
             .route("/logout", post(logout))
             .route("/verify-2fa", post(verify_2fa))
