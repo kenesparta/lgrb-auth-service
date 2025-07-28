@@ -1,4 +1,4 @@
-name: Deploy to production
+name: Tag | Deploy to production
 
 on:
   push:

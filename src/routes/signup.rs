@@ -1,5 +1,5 @@
 use crate::app_state::AppState;
-use crate::domain::{AuthAPIError, User};
+use crate::domain::{AuthAPIError, Email, User};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -29,12 +29,15 @@ pub async fn signup(
     }
 
     let mut user_store = state.user_store.write().await;
-    match user_store.get_user(&request.email).await {
+    match user_store
+        .get_user(&Email::new(request.email.clone()).unwrap())
+        .await
+    {
         Ok(_) => return Err(AuthAPIError::UserAlreadyExists),
         Err(_) => {}
     }
 
-    let user = User::new(request.email, request.password, request.requires_2fa);
+    let user = User::new(request.email, request.password, request.requires_2fa)?;
 
     match user_store.add_user(user).await {
         Ok(_) => {}

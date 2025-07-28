@@ -33,6 +33,7 @@ impl IntoResponse for AuthAPIError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
         };
 
         let body = Json(ErrorResponse {
