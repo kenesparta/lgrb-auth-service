@@ -1,0 +1,36 @@
+use crate::app_state::AppState;
+use crate::domain::{AuthAPIError, Email};
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
+use axum::Json;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize)]
+pub struct DeleteRequest {
+    pub email: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+pub struct DeleteResponse {
+    pub message: String,
+}
+
+pub async fn delete_account(
+    State(state): State<AppState>,
+    Json(request): Json<DeleteRequest>,
+) -> Result<impl IntoResponse, AuthAPIError> {
+    let mut user_store = state.user_store.write().await;
+
+    let email = Email::new(request.email)?;
+    match user_store.delete_account(&email).await {
+        Ok(_) => {}
+        Err(_) => return Err(AuthAPIError::UnexpectedError),
+    }
+
+    let response = Json(DeleteResponse {
+        message: "Account deleted".to_string(),
+    });
+
+    Ok((StatusCode::NO_CONTENT, response))
+}

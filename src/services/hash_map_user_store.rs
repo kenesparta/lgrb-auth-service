@@ -36,6 +36,11 @@ impl UserStore for HashmapUserStore {
 
         Ok(())
     }
+
+    async fn delete_account(&mut self, email: &Email) -> Result<(), UserStoreError> {
+        self.users.remove(email);
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -81,25 +86,10 @@ mod tests {
         let mut hash_map_user = HashmapUserStore {
             users: HashMap::new(),
         };
-        let user_01 = User::new(
-            SafeEmail().fake(),
-            FakePassword(8..20).fake(),
-            true,
-        )
-        .unwrap();
+        let user_01 = User::new(SafeEmail().fake(), FakePassword(8..20).fake(), true).unwrap();
         let user_02_shared: String = SafeEmail().fake();
-        let user_02 = User::new(
-            user_02_shared.clone(),
-            FakePassword(8..20).fake(),
-            false,
-        )
-        .unwrap();
-        let user_03 = User::new(
-            SafeEmail().fake(),
-            FakePassword(8..20).fake(),
-            false,
-        )
-        .unwrap();
+        let user_02 = User::new(user_02_shared.clone(), FakePassword(8..20).fake(), false).unwrap();
+        let user_03 = User::new(SafeEmail().fake(), FakePassword(8..20).fake(), false).unwrap();
 
         let result_1 = hash_map_user.add_user(user_01).await;
         assert!(result_1.is_ok());
@@ -111,16 +101,12 @@ mod tests {
         assert!(result_3.is_ok());
 
         let user_found = hash_map_user
-            .get_user(
-                &Email::new(user_02_shared).unwrap(),
-            )
+            .get_user(&Email::new(user_02_shared).unwrap())
             .await;
         assert_eq!(user_found, Ok(&user_02));
 
         let user_not_found = hash_map_user
-            .get_user(
-                &Email::new(SafeEmail().fake()).unwrap(),
-            )
+            .get_user(&Email::new(SafeEmail().fake()).unwrap())
             .await;
         assert_eq!(user_not_found, Err(UserStoreError::UserNotFound));
     }
@@ -166,5 +152,23 @@ mod tests {
             )
             .await;
         assert!(validation_ok.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_delete_account() {
+        let mut hash_map_user = HashmapUserStore {
+            users: HashMap::new(),
+        };
+
+        let user_email: String = SafeEmail().fake();
+
+        let user_01 = User::new(user_email.clone(), FakePassword(8..20).fake(), true).unwrap();
+        let result_1 = hash_map_user.add_user(user_01).await;
+        assert!(result_1.is_ok());
+
+        let result_2 = hash_map_user
+            .delete_account(&Email::new(user_email).unwrap())
+            .await;
+        assert!(result_2.is_ok());
     }
 }

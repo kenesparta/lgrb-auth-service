@@ -5,6 +5,8 @@ on:
     branches:
       # we can change this name conventions, T means task and S means sprint
       - feat-S[0-9]+T[0-9]+
+      # the Q is for side quests
+      - feat-S[0-9]+Q[0-9]+
       - bugfix-S[0-9]+T[0-9]+
       - hotfix-S[0-9]+T[0-9]+
   workflow_dispatch:

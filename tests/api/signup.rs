@@ -1,21 +1,25 @@
-use crate::helpers::{get_random_email, TestApp};
+use crate::helpers::TestApp;
 use auth_service::routes::SignupResponse;
 use auth_service::ErrorResponse;
+use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
+use fake::Fake;
 use reqwest::StatusCode;
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
     let app = TestApp::new().await;
+    let fake_email: String = SafeEmail().fake();
+    let fake_password: String = FakePassword(8..20).fake();
 
     let test_cases = [
         serde_json::json!({
-            "email": get_random_email(),
-            "password": "password123",
+            "email": fake_email,
+            "password": fake_password,
             "2FA": true
         }),
         serde_json::json!({
-            "email": get_random_email(),
-            "passwords": "123123",
+            "email": fake_email,
+            "passwords": fake_password,
             "requires2FA": false
         }),
     ];
@@ -34,10 +38,13 @@ async fn should_return_422_if_malformed_input() {
 #[tokio::test]
 async fn should_return_201_if_valid_input() {
     let app = TestApp::new().await;
+    let fake_email: String = SafeEmail().fake();
+    let fake_password: String = FakePassword(8..20).fake();
+
     let response = app
         .post_signup(&serde_json::json!({
-            "email": get_random_email(),
-            "password": "password123",
+            "email": fake_email,
+            "password": fake_password,
             "requires2FA": false
         }))
         .await;
@@ -57,16 +64,18 @@ async fn should_return_201_if_valid_input() {
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
     let app = TestApp::new().await;
+    let fake_email: String = SafeEmail().fake();
+    let fake_password: String = FakePassword(8..20).fake();
 
     let test_cases = [
         serde_json::json!({
-            "email": get_random_email(),
+            "email": fake_email,
             "password": "",
             "requires2FA": true
         }),
         serde_json::json!({
             "email": "1234example.com",
-            "password": "123123",
+            "password": fake_password,
             "requires2FA": false
         }),
     ];
@@ -94,10 +103,12 @@ async fn should_return_400_if_invalid_input() {
 #[tokio::test]
 async fn should_return_409_if_email_already_exists() {
     let app = TestApp::new().await;
+    let fake_email: String = SafeEmail().fake();
+    let fake_password: String = FakePassword(8..20).fake();
 
     let tc = serde_json::json!({
-        "email": get_random_email(),
-        "password": "8FNowQhkKHcxzJg6",
+        "email": fake_email,
+        "password": fake_password,
         "requires2FA": false
     });
 

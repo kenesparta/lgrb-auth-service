@@ -3,7 +3,6 @@ use auth_service::services::HashmapUserStore;
 use auth_service::Application;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use uuid::Uuid;
 
 pub struct TestApp {
     pub address: String,
@@ -41,7 +40,7 @@ impl TestApp {
             .json(body)
             .send()
             .await
-            .expect("Failed to execute request.")
+            .expect("Failed to execute the request.")
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
@@ -49,7 +48,7 @@ impl TestApp {
             .get(&format!("{}/", &self.address))
             .send()
             .await
-            .expect("Failed to execute request.")
+            .expect("Failed to execute the request.")
     }
 
     pub async fn get_login(&self) -> reqwest::Response {
@@ -57,7 +56,7 @@ impl TestApp {
             .post(&format!("{}/login", &self.address))
             .send()
             .await
-            .expect("Failed to execute request.")
+            .expect("Failed to execute the request.")
     }
 
     pub async fn get_logout(&self) -> reqwest::Response {
@@ -65,7 +64,7 @@ impl TestApp {
             .post(&format!("{}/logout", &self.address))
             .send()
             .await
-            .expect("Failed to execute request.")
+            .expect("Failed to execute the request.")
     }
 
     pub async fn get_verify_2fa(&self) -> reqwest::Response {
@@ -73,7 +72,7 @@ impl TestApp {
             .post(&format!("{}/verify-2fa", &self.address))
             .send()
             .await
-            .expect("Failed to execute request.")
+            .expect("Failed to execute the request.")
     }
 
     pub async fn get_verify_token(&self) -> reqwest::Response {
@@ -81,10 +80,18 @@ impl TestApp {
             .post(&format!("{}/verify-token", &self.address))
             .send()
             .await
-            .expect("Failed to execute request.")
+            .expect("Failed to execute the request.")
     }
-}
 
-pub fn get_random_email() -> String {
-    format!("{}@example.com", Uuid::new_v4())
+    pub async fn delete_account<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.http_client
+            .delete(&format!("{}/delete-account", &self.address))
+            .json(body)
+            .send()
+            .await
+            .expect("Failed to execute the request.")
+    }
 }

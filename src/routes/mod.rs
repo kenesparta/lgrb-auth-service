@@ -1,3 +1,4 @@
+mod delete_account;
 mod health_check;
 mod login;
 mod logout;
@@ -5,6 +6,7 @@ mod signup;
 mod verify_2fa;
 mod verify_token;
 
+pub use delete_account::*;
 pub use health_check::*;
 pub use login::*;
 pub use logout::*;
