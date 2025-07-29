@@ -13,9 +13,16 @@ uuid = { version = "1.7.0", features = ["v4", "serde"] }
 async-trait = "0.1.88"
 validator = "0.20.0"
 thiserror = "2.0.12"
+tonic = "0.14"
+prost = "0.14"
+tonic-prost = "0.14.0"
+tonic-reflection = "0.14"
 
 [dev-dependencies]
 reqwest = { version = "0.11.26", default-features = false, features = ["json"] }
 fake = "=4.3.0"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.1.0"
+
+[build-dependencies]
+tonic-prost-build = "0.14"

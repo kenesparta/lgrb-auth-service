@@ -1,5 +1,6 @@
 pub mod app_state;
 mod domain;
+pub mod grpc;
 pub mod routes;
 pub mod services;
 
