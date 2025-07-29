@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package verify_token;
+package auth_service;
 
 service AuthService {
     rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);

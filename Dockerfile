@@ -4,8 +4,7 @@ ARG CHISEL_VERSION=v1.1.0
 # Start with image that has the Rust toolchain installed
 FROM rust:1.86-alpine AS chef
 USER root
-# Add cargo-chef to cache dependencies
-RUN apk add --no-cache musl-dev & cargo install cargo-chef
+RUN apk add --no-cache musl-dev protobuf-dev protoc & cargo install cargo-chef
 WORKDIR /app
 
 FROM chef AS planner
