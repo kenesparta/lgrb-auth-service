@@ -1,9 +1,3 @@
-I'll help you create a comprehensive README for this project. Let me first explore the project structure to understand
-the complete scope.# Auth Service
-A robust authentication service built in Rust using Axum for HTTP REST API and Tonic for gRPC functionality. This
-service provides comprehensive user management with features like user registration, login, 2FA verification, and
-account management.
-
 ## Features
 
 - **User Authentication**: Secure user registration and login with email validation
