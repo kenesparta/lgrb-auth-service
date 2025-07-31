@@ -76,11 +76,8 @@ jobs:
         sudo apt update && sudo apt install ./hurl_${VERSION}_amd64.deb
 
     - name: API tests
-      run: make test
-
-    - name: API tests
       env:
         DOCKER_IMAGE: kenesparta/lgr-auth-service:${{ steps.prep.outputs.tag }}
         BASE_URL: http://127.0.0.1:3000
       run: |
-        make test
+        make dev-test

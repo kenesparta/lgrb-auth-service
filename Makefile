@@ -1,4 +1,4 @@
-dev:
+dev-test:
 	docker run -d \
       --name auth-service \
       --restart always \
@@ -6,4 +6,4 @@ dev:
       -p 50051:50051 \
       $(DOCKER_IMAGE)
 
-	hurl --variable host=$(BASE_URL) --parallel --jobs 100 --repeat 10000 --test ./http/
+	hurl --variable BASE_URL=$(BASE_URL) --parallel --jobs 100 --repeat 10000 --test ./http/

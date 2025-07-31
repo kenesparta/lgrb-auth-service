@@ -1,5 +1,5 @@
 # ###
-POST http://localhost:3000/signup
+POST {{BASE_URL}}/signup
 Content-Type: application/json
 
 {
@@ -14,7 +14,7 @@ jsonpath "$.message" == "User created successfully!"
 
 # ###
 # Test signup with invalid email (400)
-POST {{host}}/signup
+POST {{BASE_URL}}/signup
 Content-Type: application/json
 
 {
@@ -29,7 +29,7 @@ jsonpath "$.error_message" exists
 
 # ###
 # Test signup with existing email (409)
-POST {{host}}/signup
+POST {{BASE_URL}}/signup
 Content-Type: application/json
 
 {
