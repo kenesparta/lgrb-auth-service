@@ -1,6 +1,0 @@
-### Variables
-@baseUrl =https://auth.rustybootcamp.xyz
-
-### Health check
-GET {{baseUrl}}/health-check
-Content-Type: application/json

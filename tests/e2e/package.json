@@ -1,0 +1,23 @@
+{
+  "name": "auth-service-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end UI tests for authentication service",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui:firefox": "playwright test --project='UI Tests - Firefox'",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:signup": "playwright test signup",
+    "test:login": "playwright test login",
+    "test:2fa": "playwright test 2fa",
+    "test:ci": "playwright test --reporter=dot --workers=2",
+    "test:report": "playwright show-report",
+    "install:deps": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.1"
+  },
+  "dependencies": {
+    "@types/node": "^24.1.0"
+  }
+}
