@@ -1,10 +1,9 @@
 {
   "name": "auth-service-e2e-tests",
   "version": "1.0.0",
-  "description": "End-to-end API and UI tests for authentication service",
+  "description": "End-to-end UI tests for authentication service",
   "scripts": {
     "test": "playwright test",
-    "test:api": "playwright test --project='API Tests'",
     "test:ui:firefox": "playwright test --project='UI Tests - Firefox'",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",

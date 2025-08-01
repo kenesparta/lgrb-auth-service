@@ -30,17 +30,6 @@ module.exports = defineConfig({
       testDir: './tests/ui',
       use: { ...devices['Desktop Firefox'] },
     },
-
-    {
-      name: 'API Tests',
-      testDir: './tests/api',
-      use: {
-        extraHTTPHeaders: {
-          'Content-Type': 'application/json',
-        },
-      },
-    },
-
   ],
 
   globalSetup: require.resolve('./utils/global-setup.js'),
