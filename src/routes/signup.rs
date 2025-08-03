@@ -95,7 +95,10 @@ mod tests {
             requires_2fa: false,
         };
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
+        assert!(matches!(
+            result,
+            Err(AuthAPIError::EmailOrPasswordIncorrect)
+        ));
     }
 
     #[tokio::test]
@@ -109,7 +112,10 @@ mod tests {
         };
 
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
+        assert!(matches!(
+            result,
+            Err(AuthAPIError::EmailOrPasswordIncorrect)
+        ));
     }
 
     #[tokio::test]
@@ -123,7 +129,10 @@ mod tests {
         };
 
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
+        assert!(matches!(
+            result,
+            Err(AuthAPIError::EmailOrPasswordIncorrect)
+        ));
     }
 
     #[tokio::test]

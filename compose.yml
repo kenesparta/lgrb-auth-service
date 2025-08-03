@@ -1,6 +1,8 @@
 services:
   auth-service:
     image: kenesparta/lgr-auth-service
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
     restart: "always"
     ports:
       - "3000:3000"
