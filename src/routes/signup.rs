@@ -26,7 +26,7 @@ pub async fn signup(
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     if request.email.is_empty() || request.password.len() < 8 || !request.email.contains('@') {
-        return Err(AuthAPIError::InvalidCredentials);
+        return Err(AuthAPIError::EmailOrPasswordIncorrect);
     }
 
     let user = User::new(request.email, request.password, request.requires_2fa)?;
@@ -41,7 +41,7 @@ pub async fn signup(
         Err(e) => match e {
             UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),
             UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError),
-            UserStoreError::InvalidCredentials => Err(AuthAPIError::InvalidCredentials),
+            UserStoreError::IncorrectCredentials => Err(AuthAPIError::IncorrectCredentials),
             UserStoreError::UnexpectedError => Err(AuthAPIError::UnexpectedError),
         },
     }
@@ -95,7 +95,7 @@ mod tests {
             requires_2fa: false,
         };
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(result, Err(AuthAPIError::InvalidCredentials)));
+        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
     }
 
     #[tokio::test]
@@ -109,7 +109,7 @@ mod tests {
         };
 
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(result, Err(AuthAPIError::InvalidCredentials)));
+        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
     }
 
     #[tokio::test]
@@ -123,7 +123,7 @@ mod tests {
         };
 
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(result, Err(AuthAPIError::InvalidCredentials)));
+        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
     }
 
     #[tokio::test]

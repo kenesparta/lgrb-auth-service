@@ -31,7 +31,7 @@ impl UserStore for HashmapUserStore {
     ) -> Result<(), UserStoreError> {
         let user = self.get_user(email).await?;
         if user.password() != password {
-            return Err(UserStoreError::InvalidCredentials);
+            return Err(UserStoreError::IncorrectCredentials);
         }
 
         Ok(())
@@ -143,7 +143,7 @@ mod tests {
                 &Password::new(FakePassword(8..20).fake()).unwrap(),
             )
             .await;
-        assert_eq!(validation_failed, Err(UserStoreError::InvalidCredentials));
+        assert_eq!(validation_failed, Err(UserStoreError::IncorrectCredentials));
 
         let validation_ok = hash_map_user
             .validate_user(

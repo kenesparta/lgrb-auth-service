@@ -95,7 +95,7 @@ async fn should_return_400_if_invalid_input() {
                 .await
                 .expect("")
                 .error_message,
-            "Invalid credentials"
+            "Email or password incorrect"
         );
     }
 }
