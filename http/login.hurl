@@ -24,3 +24,14 @@ Content-Type: application/json
 HTTP 401
 [Asserts]
 jsonpath "$.error_message" == "Incorrect credentials"
+
+
+# ###
+DELETE {{BASE_URL}}/delete-account
+Content-Type: application/json
+
+{
+  "email": "my+email@example.com"
+}
+
+HTTP 204
