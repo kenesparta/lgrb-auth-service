@@ -29,9 +29,9 @@ pub async fn signup(
         return Err(AuthAPIError::InvalidCredentials);
     }
 
-    let mut user_store = state.user_store.write().await;
     let user = User::new(request.email, request.password, request.requires_2fa)?;
-    match user_store.add_user(user).await {
+    let result = state.user_store.write().await.add_user(user).await;
+    match result {
         Ok(()) => {
             let response = Json(SignupResponse {
                 message: "User created successfully!".to_string(),

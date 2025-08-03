@@ -16,7 +16,8 @@ async fn main() {
         .expect("Failed to build app");
 
     let grpc_service = create_grpc_service();
-    let grpc_addr = "0.0.0.0:50051".parse().unwrap();
+    let grpc_addr = "0.0.0.0:50051".parse().unwrap(); // TODO: add error handling
+
     let reflection = ReflectionBuilder::configure()
         .register_encoded_file_descriptor_set(include_bytes!("../proto/proto_descriptor.bin"))
         .build_v1()

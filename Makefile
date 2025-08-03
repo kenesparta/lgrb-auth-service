@@ -7,3 +7,11 @@ dev-test:
       $(DOCKER_IMAGE)
 
 	hurl --variable BASE_URL=$(BASE_URL) --parallel --jobs 100 --repeat 10000 --test ./http/
+
+grpc-test:
+	@grpcurl -plaintext 127.0.0.1:50051 describe
+	@echo "----"
+	@grpcurl -plaintext -d '{"token": "dadsasdads"}' 127.0.0.1:50051 auth_service.AuthService/VerifyToken
+
+grpc-proto:
+	@grpcurl -plaintext -proto ./proto/auth_service.proto -d '{"token": "my-token"}' 127.0.0.1:50051 auth_service.AuthService/VerifyToken
