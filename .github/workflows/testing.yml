@@ -39,6 +39,7 @@ jobs:
     - name: Build and test auth-service code
       working-directory: .
       run: |
+        export JWT_SECRET=secret
         cargo build --verbose
         cargo test --verbose
 

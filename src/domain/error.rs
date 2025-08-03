@@ -1,4 +1,5 @@
 use crate::domain::{EmailError, PasswordError, UserError};
+use crate::utils::GenerateTokenError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AuthAPIError {
@@ -22,4 +23,7 @@ pub enum AuthAPIError {
 
     #[error("User error")]
     UserError(#[from] UserError),
+
+    #[error("Generate token error")]
+    GenerateTokenError(#[from] GenerateTokenError),
 }

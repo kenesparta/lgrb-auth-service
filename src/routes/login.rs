@@ -1,10 +1,12 @@
 use crate::app_state::AppState;
 use crate::domain::data_stores::UserStoreError;
 use crate::domain::{AuthAPIError, Email, Password};
+use crate::utils::generate_auth_cookie;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -20,8 +22,9 @@ pub struct LoginResponse {
 
 pub async fn login(
     State(state): State<AppState>,
+    jar: CookieJar,
     Json(request): Json<LoginRequest>,
-) -> Result<impl IntoResponse, AuthAPIError> {
+) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     if request.email.is_empty() || request.password.len() < 8 || !request.email.contains('@') {
         return Err(AuthAPIError::EmailOrPasswordIncorrect);
     }
@@ -36,7 +39,11 @@ pub async fn login(
 
     let result = store.get_user(&email).await;
     match result {
-        Ok(_) => Ok((StatusCode::OK, ())),
+        Ok(_) => {
+            let auth_cookie = generate_auth_cookie(&email)?;
+            let updated_jar = jar.add(auth_cookie);
+            Ok((updated_jar, StatusCode::OK.into_response()))
+        }
 
         Err(e) => match e {
             UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),

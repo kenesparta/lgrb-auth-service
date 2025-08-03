@@ -12,6 +12,7 @@ HTTP 201
 [Asserts]
 jsonpath "$.message" == "User created successfully!"
 
+
 # ###
 POST {{BASE_URL}}/login
 Content-Type: application/json
@@ -24,6 +25,18 @@ Content-Type: application/json
 HTTP 401
 [Asserts]
 jsonpath "$.error_message" == "Incorrect credentials"
+
+
+# ###
+POST {{BASE_URL}}/login
+Content-Type: application/json
+
+{
+  "email": "my+email@example.com",
+  "password": "password123"
+}
+
+HTTP 200
 
 
 # ###
