@@ -6,7 +6,7 @@ dev-test:
       -p 50051:50051 \
       $(DOCKER_IMAGE)
 
-	hurl --variable BASE_URL=$(BASE_URL) --parallel --jobs 100 --repeat 10000 --test ./http/
+	hurl --variable BASE_URL=$(BASE_URL) --jobs 1 --repeat 10000 --test ./http/
 
 grpc-test:
 	@grpcurl -plaintext 127.0.0.1:50051 describe

@@ -6,7 +6,7 @@ use mockall::automock;
 pub enum UserStoreError {
     UserAlreadyExists,
     UserNotFound,
-    InvalidCredentials,
+    IncorrectCredentials,
     UnexpectedError,
 }
 
