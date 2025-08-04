@@ -15,6 +15,12 @@ pub enum AuthAPIError {
     #[error("Unexpected error")]
     UnexpectedError,
 
+    #[error("Missing token")]
+    MissingToken,
+
+    #[error("Token not valid")]
+    TokenNotValid,
+
     #[error("Password error")]
     PasswordError(#[from] PasswordError),
 

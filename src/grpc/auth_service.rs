@@ -9,6 +9,8 @@ use auth_service::{
     VerifyTokenRequest, VerifyTokenResponse,
 };
 
+use crate::utils::validate_token;
+
 pub struct AuthServiceImpl;
 
 #[tonic::async_trait]
@@ -18,17 +20,19 @@ impl AuthService for AuthServiceImpl {
         request: Request<VerifyTokenRequest>,
     ) -> Result<Response<VerifyTokenResponse>, Status> {
         let req = request.into_inner();
-
-        let response = VerifyTokenResponse {
-            valid: !req.token.is_empty(),
-            message: if !req.token.is_empty() {
-                "Token is valid".to_string()
-            } else {
-                "Token is invalid".to_string()
-            },
-        };
-
-        Ok(Response::new(response))
+        let token = req.token;
+        match validate_token(&token).await {
+            Ok(_) => {
+                Ok(Response::new(VerifyTokenResponse{
+                    valid: true,
+                    message: "Token is valid".to_string()
+                }))
+            }
+            Err(_) => Ok(Response::new(VerifyTokenResponse{
+                valid: false,
+                message: "Token is not valid".to_string()
+            })),
+        }
     }
 }
 
