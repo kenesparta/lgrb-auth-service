@@ -1,5 +1,5 @@
 pub mod app_state;
-mod domain;
+pub mod domain;
 pub mod grpc;
 pub mod routes;
 pub mod services;
@@ -7,16 +7,17 @@ pub mod utils;
 
 use crate::domain::AuthAPIError;
 use crate::routes::{
-    delete_account, health_check, login, logout, signup, verify_2fa, verify_token,
+    delete_account, health_check, login, logout, signup, verify_2fa,
 };
 use app_state::AppState;
-use axum::http::StatusCode;
+use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::serve::Serve;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
 pub struct Application {
@@ -42,6 +43,8 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::EmailOrPasswordIncorrect => {
                 (StatusCode::BAD_REQUEST, "Email or password incorrect")
             }
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing JWT token"),
+            AuthAPIError::TokenNotValid => (StatusCode::UNAUTHORIZED, "JWT token not valid"),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
         };
 
@@ -63,8 +66,8 @@ impl Application {
             .route("/login", post(login))
             .route("/logout", post(logout))
             .route("/verify-2fa", post(verify_2fa))
-            .route("/verify-token", post(verify_token))
-            .with_state(app_state);
+            .with_state(app_state)
+            .layer(cors()?);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -77,4 +80,14 @@ impl Application {
         println!("listening on {}", &self.address);
         self.server.await
     }
+}
+
+fn cors() -> Result<CorsLayer, Box<dyn Error>> {
+    Ok(CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_credentials(true)
+        .allow_origin([
+            "http://localhost:8000".parse()?,
+            "https://app.rustybootcamp.xyz".parse()?,
+        ]))
 }

@@ -39,11 +39,10 @@ pub async fn login(
 
     let result = store.get_user(&email).await;
     match result {
-        Ok(_) => {
-            let auth_cookie = generate_auth_cookie(&email)?;
-            let updated_jar = jar.add(auth_cookie);
-            Ok((updated_jar, StatusCode::OK.into_response()))
-        }
+        Ok(_) => Ok((
+            jar.add(generate_auth_cookie(&email)?),
+            StatusCode::OK.into_response(),
+        )),
 
         Err(e) => match e {
             UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),
