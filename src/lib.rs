@@ -6,9 +6,7 @@ pub mod services;
 pub mod utils;
 
 use crate::domain::AuthAPIError;
-use crate::routes::{
-    delete_account, health_check, login, logout, signup, verify_2fa,
-};
+use crate::routes::{delete_account, health_check, login, logout, signup, verify_2fa};
 use app_state::AppState;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -45,6 +43,10 @@ impl IntoResponse for AuthAPIError {
             }
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing JWT token"),
             AuthAPIError::TokenNotValid => (StatusCode::UNAUTHORIZED, "JWT token not valid"),
+            AuthAPIError::ErrorAddingToBannedTokens => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Error adding to banned tokens",
+            ),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
         };
 

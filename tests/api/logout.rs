@@ -50,8 +50,16 @@ async fn should_return_200_if_valid_jwt_cookie() {
         .await;
     assert_eq!(response.status().as_u16(), StatusCode::OK);
 
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), StatusCode::OK);
+
+    let banned_tokens = app.banned_tokens.read().await;
+    assert!(banned_tokens.is_banned(&auth_cookie.value()).await.unwrap());
 }
 
 #[tokio::test]

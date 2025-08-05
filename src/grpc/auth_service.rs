@@ -21,16 +21,15 @@ impl AuthService for AuthServiceImpl {
     ) -> Result<Response<VerifyTokenResponse>, Status> {
         let req = request.into_inner();
         let token = req.token;
+        // TODO: Adding validation token that reads from a Database, not using a local storage.
         match validate_token(&token).await {
-            Ok(_) => {
-                Ok(Response::new(VerifyTokenResponse{
-                    valid: true,
-                    message: "Token is valid".to_string()
-                }))
-            }
-            Err(_) => Ok(Response::new(VerifyTokenResponse{
+            Ok(_) => Ok(Response::new(VerifyTokenResponse {
+                valid: true,
+                message: "Token is valid".to_string(),
+            })),
+            Err(_) => Ok(Response::new(VerifyTokenResponse {
                 valid: false,
-                message: "Token is not valid".to_string()
+                message: "Token is not valid".to_string(),
             })),
         }
     }

@@ -51,9 +51,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_user_add() {
-        let mut hash_map_user = HashmapUserStore {
-            users: HashMap::new(),
-        };
+        let mut hash_map_user = HashmapUserStore::default();
 
         let fake_email: String = SafeEmail().fake();
         let fake_password: String = FakePassword(8..20).fake();
@@ -68,9 +66,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_user_already_exist_error() {
-        let mut hash_map_user = HashmapUserStore {
-            users: HashMap::new(),
-        };
+        let mut hash_map_user = HashmapUserStore::default();
         let shared_email: String = SafeEmail().fake();
         let user_01 = User::new(shared_email.clone(), FakePassword(8..20).fake(), true).unwrap();
         let user_02 = User::new(shared_email, FakePassword(8..20).fake(), false).unwrap();
@@ -83,9 +79,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_user() {
-        let mut hash_map_user = HashmapUserStore {
-            users: HashMap::new(),
-        };
+        let mut hash_map_user = HashmapUserStore::default();
         let user_01 = User::new(SafeEmail().fake(), FakePassword(8..20).fake(), true).unwrap();
         let user_02_shared: String = SafeEmail().fake();
         let user_02 = User::new(user_02_shared.clone(), FakePassword(8..20).fake(), false).unwrap();
@@ -113,9 +107,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_user() {
-        let mut hash_map_user = HashmapUserStore {
-            users: HashMap::new(),
-        };
+        let mut hash_map_user = HashmapUserStore::default();
 
         let user_01_email_shared: String = SafeEmail().fake();
         let user_01_password_shared: String = FakePassword(8..20).fake();
@@ -156,9 +148,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_account() {
-        let mut hash_map_user = HashmapUserStore {
-            users: HashMap::new(),
-        };
+        let mut hash_map_user = HashmapUserStore::default();
 
         let user_email: String = SafeEmail().fake();
 
