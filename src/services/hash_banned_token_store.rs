@@ -24,8 +24,8 @@ impl BannedTokenStore for HashsetBannedTokenStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fake::faker::lorem::en::{Sentence, Word};
     use fake::Fake;
+    use fake::faker::lorem::en::{Sentence, Word};
 
     #[tokio::test]
     async fn test_store_token_success() {

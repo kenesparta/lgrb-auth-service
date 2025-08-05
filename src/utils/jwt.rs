@@ -22,7 +22,8 @@ fn set_token() -> String {
 fn set_cookie_subdomain() -> String {
     dotenv().ok();
 
-    let cookie_subdomain = std_env::var(env::COOKIE_SUBDOMAIN_ENV_VAR).expect("COOKIE_SUBDOMAIN must be set.");
+    let cookie_subdomain =
+        std_env::var(env::COOKIE_SUBDOMAIN_ENV_VAR).expect("COOKIE_SUBDOMAIN must be set.");
     if cookie_subdomain.is_empty() {
         panic!("COOKIE_SUBDOMAIN must not be empty.");
     }

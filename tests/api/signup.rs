@@ -1,8 +1,8 @@
 use crate::helpers::TestApp;
-use auth_service::routes::SignupResponse;
 use auth_service::ErrorResponse;
-use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
+use auth_service::routes::SignupResponse;
 use fake::Fake;
+use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use reqwest::StatusCode;
 
 #[tokio::test]

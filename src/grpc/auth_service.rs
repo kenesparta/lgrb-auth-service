@@ -5,8 +5,8 @@ pub mod auth_service {
 }
 
 use auth_service::{
-    auth_service_server::{AuthService, AuthServiceServer},
     VerifyTokenRequest, VerifyTokenResponse,
+    auth_service_server::{AuthService, AuthServiceServer},
 };
 
 use crate::utils::validate_token;

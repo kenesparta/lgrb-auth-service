@@ -2,10 +2,10 @@ use crate::app_state::AppState;
 use crate::domain::data_stores::UserStoreError;
 use crate::domain::{AuthAPIError, Email, Password};
 use crate::utils::generate_auth_cookie;
+use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::Json;
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 

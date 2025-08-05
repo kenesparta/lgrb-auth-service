@@ -1,6 +1,6 @@
 use crate::helpers::TestApp;
-use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use fake::Fake;
+use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use reqwest::StatusCode;
 
 #[tokio::test]

@@ -1,10 +1,10 @@
 use crate::app_state::AppState;
 use crate::domain::data_stores::UserStoreError;
 use crate::domain::{AuthAPIError, User};
+use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::Json;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -51,12 +51,12 @@ pub async fn signup(
 mod tests {
     use super::*;
     use crate::app_state::AppState;
-    use crate::domain::data_stores::{MockBannedTokenStore, MockUserStore, UserStoreError};
     use crate::domain::AuthAPIError;
-    use axum::extract::State;
+    use crate::domain::data_stores::{MockBannedTokenStore, MockUserStore, UserStoreError};
     use axum::Json;
-    use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
+    use axum::extract::State;
     use fake::Fake;
+    use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
     use std::sync::Arc;
     use tokio::sync::RwLock;
 

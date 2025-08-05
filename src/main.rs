@@ -1,8 +1,8 @@
+use auth_service::Application;
 use auth_service::app_state::{AppState, BannedTokenStoreType, UserStoreType};
 use auth_service::grpc::auth_service::create_grpc_service;
 use auth_service::services::{HashmapUserStore, HashsetBannedTokenStore};
 use auth_service::utils::prod;
-use auth_service::Application;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tonic::transport::Server;

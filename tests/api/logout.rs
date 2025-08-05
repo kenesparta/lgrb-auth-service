@@ -1,7 +1,7 @@
 use crate::helpers::TestApp;
 use auth_service::utils::JWT_COOKIE_NAME;
-use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use fake::Fake;
+use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use reqwest::{StatusCode, Url};
 
 #[tokio::test]

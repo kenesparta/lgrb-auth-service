@@ -1,7 +1,7 @@
 use crate::domain::data_stores::{UserStore, UserStoreError};
 use crate::domain::{Email, Password, User};
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 
 #[derive(Default)]
 pub struct HashmapUserStore {
@@ -46,8 +46,8 @@ impl UserStore for HashmapUserStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
     use fake::Fake;
+    use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 
     #[tokio::test]
     async fn test_user_add() {

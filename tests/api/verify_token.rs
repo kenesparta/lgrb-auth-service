@@ -1,13 +1,13 @@
 use auth_service::domain::Email;
 use auth_service::grpc::auth_service::{
-    auth_service::{auth_service_client::AuthServiceClient, VerifyTokenRequest},
+    auth_service::{VerifyTokenRequest, auth_service_client::AuthServiceClient},
     create_grpc_service,
 };
 use auth_service::utils::generate_auth_cookie;
-use fake::faker::internet::en::SafeEmail;
 use fake::Fake;
-use tonic::transport::Server;
+use fake::faker::internet::en::SafeEmail;
 use tonic::Request;
+use tonic::transport::Server;
 
 #[tokio::test]
 async fn test_verify_token_valid() {
