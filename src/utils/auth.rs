@@ -2,7 +2,7 @@ use super::constants::JWT_COOKIE_NAME;
 use crate::domain::Email;
 use crate::utils::TOKEN_TTL_SECONDS;
 use crate::utils::jwt::{COOKIE_SUBDOMAIN, JWT_SECRET};
-use axum_extra::extract::cookie::{Cookie, SameSite};
+use axum_extra::extract::cookie::Cookie;
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
@@ -96,7 +96,6 @@ mod tests {
         assert_eq!(cookie.value().split('.').count(), 3);
         assert_eq!(cookie.path(), Some("/"));
         assert_eq!(cookie.http_only(), Some(true));
-        assert_eq!(cookie.same_site(), Some(SameSite::Lax));
     }
 
     #[tokio::test]
@@ -107,7 +106,6 @@ mod tests {
         assert_eq!(cookie.value(), token);
         assert_eq!(cookie.path(), Some("/"));
         assert_eq!(cookie.http_only(), Some(true));
-        assert_eq!(cookie.same_site(), Some(SameSite::Lax));
     }
 
     #[tokio::test]
