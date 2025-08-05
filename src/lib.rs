@@ -91,5 +91,6 @@ fn cors() -> Result<CorsLayer, Box<dyn Error>> {
         .allow_origin([
             "http://localhost:8000".parse()?,
             "https://app.rustybootcamp.xyz".parse()?,
+            "app.rustybootcamp.xyz".parse()?,
         ]))
 }
