@@ -5,8 +5,7 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
-use std::env as std_env;
-use crate::utils::jwt::JWT_SECRET;
+use crate::utils::jwt::{COOKIE_SUBDOMAIN, JWT_SECRET};
 
 // Create a cookie with a new JWT auth token
 pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTokenError> {
@@ -16,10 +15,8 @@ pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTo
 
 // Create a cookie and set the value to the passed-in token string
 fn create_auth_cookie(token: String) -> Cookie<'static> {
-    let subdomain =
-        std_env::var(env::COOKIE_SUBDOMAIN_ENV_VAR).expect("COOKIE_SUBDOMAIN must be set.");
     let cookie = Cookie::build((JWT_COOKIE_NAME, token))
-        .domain(subdomain)
+        .domain(COOKIE_SUBDOMAIN.as_str())
         .path("/")
         .http_only(true)
         .same_site(SameSite::Lax)

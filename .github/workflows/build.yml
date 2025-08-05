@@ -34,6 +34,8 @@ jobs:
     - name: Build and test auth-service code
       working-directory: .
       run: |
+        export JWT_SECRET=secret
+        export COOKIE_SUBDOMAIN=127.0.0.1
         cargo build --verbose
         cargo test --verbose
 
