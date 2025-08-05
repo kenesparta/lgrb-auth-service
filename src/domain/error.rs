@@ -15,6 +15,9 @@ pub enum AuthAPIError {
     #[error("Unexpected error")]
     UnexpectedError,
 
+    #[error("Error adding to banned tokens")]
+    ErrorAddingToBannedTokens,
+
     #[error("Missing token")]
     MissingToken,
 
