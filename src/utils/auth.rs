@@ -19,7 +19,6 @@ fn create_auth_cookie(token: String) -> Cookie<'static> {
         .domain(COOKIE_SUBDOMAIN.as_str())
         .path("/")
         .http_only(true)
-        .same_site(SameSite::Lax)
         .build();
 
     cookie
