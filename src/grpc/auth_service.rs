@@ -27,10 +27,13 @@ impl AuthService for AuthServiceImpl {
                 valid: true,
                 message: "Token is valid".to_string(),
             })),
-            Err(_) => Ok(Response::new(VerifyTokenResponse {
-                valid: false,
-                message: "Token is not valid".to_string(),
-            })),
+            Err(e) => {
+                println!("error validating the token {:?}", e);
+                Ok(Response::new(VerifyTokenResponse {
+                    valid: false,
+                    message: "Token is not valid".to_string(),
+                }))
+            },
         }
     }
 }
