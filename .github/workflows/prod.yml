@@ -22,5 +22,10 @@ jobs:
       run: |
         aws ecs update-service \
           --cluster lgr-service-cluster \
-          --service auth-service \
+          --service auth-service-restAPI \
+          --force-new-deployment
+
+        aws ecs update-service \
+          --cluster lgr-service-cluster \
+          --service auth-service-gRPC \
           --force-new-deployment
