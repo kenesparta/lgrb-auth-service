@@ -35,7 +35,7 @@ jobs:
       working-directory: .
       run: |
         export JWT_SECRET=secret
-        export COOKIE_SUBDOMAIN=127.0.0.1
+        export COOKIE_DOMAIN=127.0.0.1
         cargo build --verbose
         cargo test --verbose
 

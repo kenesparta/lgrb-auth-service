@@ -85,12 +85,16 @@ impl Application {
 }
 
 fn cors() -> Result<CorsLayer, Box<dyn Error>> {
+    let allowed_origins = std::env::var("CORS_ALLOWED_ORIGINS")
+        .unwrap_or_else(|_| "http://localhost:8000".to_string());
+
+    let origins: Result<Vec<_>, _> = allowed_origins
+        .split(',')
+        .map(|origin| origin.trim().parse())
+        .collect();
+
     Ok(CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
         .allow_credentials(true)
-        .allow_origin([
-            "http://localhost:8000".parse()?,
-            "https://app.rustybootcamp.xyz".parse()?,
-            "app.rustybootcamp.xyz".parse()?,
-        ]))
+        .allow_origin(origins?))
 }
