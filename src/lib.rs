@@ -86,7 +86,7 @@ impl Application {
 
 fn cors() -> Result<CorsLayer, Box<dyn Error>> {
     let allowed_origins = std::env::var("CORS_ALLOWED_ORIGINS")
-        .unwrap_or_else(|_| "http://localhost:8000".to_string());
+        .unwrap_or_else(|_| "http://127.0.0.1,http://localhost".to_string());
 
     let origins: Result<Vec<_>, _> = allowed_origins
         .split(',')
