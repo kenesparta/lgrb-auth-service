@@ -94,7 +94,7 @@ fn cors() -> Result<CorsLayer, Box<dyn Error>> {
         .collect();
 
     Ok(CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::PUT])
         .allow_credentials(true)
         .allow_origin(origins?))
 }
