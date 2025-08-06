@@ -3,7 +3,8 @@ services:
     image: kenesparta/lgr-auth-service
     environment:
       JWT_SECRET: ${JWT_SECRET}
-      COOKIE_SUBDOMAIN: ${COOKIE_SUBDOMAIN}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
     restart: "always"
     ports:
       - "3000:3000"

@@ -33,7 +33,7 @@ impl AuthService for AuthServiceImpl {
                     valid: false,
                     message: "Token is not valid".to_string(),
                 }))
-            },
+            }
         }
     }
 }

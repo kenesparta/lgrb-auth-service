@@ -1,7 +1,7 @@
 use super::constants::JWT_COOKIE_NAME;
 use crate::domain::Email;
 use crate::utils::TOKEN_TTL_SECONDS;
-use crate::utils::jwt::{COOKIE_SUBDOMAIN, JWT_SECRET};
+use crate::utils::jwt::{COOKIE_DOMAIN, JWT_SECRET};
 use axum_extra::extract::cookie::Cookie;
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Validation, decode, encode};
@@ -16,7 +16,7 @@ pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTo
 // Create a cookie and set the value to the passed-in token string
 fn create_auth_cookie(token: String) -> Cookie<'static> {
     let cookie = Cookie::build((JWT_COOKIE_NAME, token))
-        .domain(COOKIE_SUBDOMAIN.as_str())
+        .domain(COOKIE_DOMAIN.as_str())
         .path("/")
         .http_only(true)
         .build();

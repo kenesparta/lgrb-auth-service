@@ -3,7 +3,7 @@ pub const TOKEN_TTL_SECONDS: i64 = 600;
 
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";
-    pub const COOKIE_SUBDOMAIN_ENV_VAR: &str = "COOKIE_SUBDOMAIN";
+    pub const COOKIE_DOMAIN_ENV_VAR: &str = "COOKIE_DOMAIN";
 }
 
 pub mod prod {
