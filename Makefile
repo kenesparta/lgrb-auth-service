@@ -16,3 +16,14 @@ grpc-test:
 
 grpc-proto:
 	@grpcurl -plaintext -proto ./proto/auth_service.proto -d '{"token": "my-token"}' 127.0.0.1:50051 auth_service.AuthService/VerifyToken
+
+dev-test-d:
+	docker run -d \
+      --name auth-service \
+      --restart always \
+      -p 3000:3000 \
+      -p 50051:50051 \
+      -e CORS_ALLOWED_ORIGINS="*" \
+      kenesparta/lgr-auth-service:feat-s03q01
+
+	hurl --variable BASE_URL=http://127.0.0.1:3000 --jobs 1 --repeat 10000 --test ./http/

@@ -86,7 +86,7 @@ impl Application {
 
 fn cors() -> Result<CorsLayer, Box<dyn Error>> {
     Ok(CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE])
         .allow_credentials(true)
         .allow_origin([
             "http://localhost:8000".parse()?,
