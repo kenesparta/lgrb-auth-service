@@ -4,6 +4,7 @@ dev-test:
       --restart always \
       -p 3000:3000 \
       -p 50051:50051 \
+      -e CORS_ALLOWED_ORIGINS=$(CORS_ALLOWED_ORIGINS) \
       $(DOCKER_IMAGE)
 
 	hurl --variable BASE_URL=$(BASE_URL) --jobs 1 --repeat 10000 --test ./http/

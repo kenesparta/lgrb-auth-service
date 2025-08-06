@@ -79,6 +79,7 @@ jobs:
 
     - name: API tests
       env:
+        CORS_ALLOWED_ORIGINS: *
         DOCKER_IMAGE: kenesparta/lgr-auth-service:${{ steps.prep.outputs.tag }}
         BASE_URL: http://127.0.0.1:3000
       run: |
