@@ -6,7 +6,9 @@ pub mod services;
 pub mod utils;
 
 use crate::domain::AuthAPIError;
-use crate::routes::{delete_account, health_check, login, logout, signup, verify_2fa};
+use crate::routes::{
+    delete_account, health_check, login, logout, refresh_token, signup, verify_2fa,
+};
 use app_state::AppState;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -68,6 +70,7 @@ impl Application {
             .route("/login", post(login))
             .route("/logout", post(logout))
             .route("/verify-2fa", post(verify_2fa))
+            .route("/refresh-token", post(refresh_token))
             .with_state(app_state)
             .layer(cors()?);
 
