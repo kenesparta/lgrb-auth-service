@@ -1,5 +1,7 @@
 pub const JWT_COOKIE_NAME: &str = "jwt";
+pub const JWT_REFRESH_COOKIE_NAME: &str = "jwt-refresh";
 pub const TOKEN_TTL_SECONDS: i64 = 600;
+pub const REFRESH_TOKEN_TTL_SECONDS: i64 = 3600;
 
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";

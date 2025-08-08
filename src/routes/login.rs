@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
 use crate::domain::data_stores::UserStoreError;
 use crate::domain::{AuthAPIError, Email, Password};
-use crate::utils::generate_auth_cookie;
+use crate::utils::{generate_auth_cookie, generate_refresh_cookie};
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -25,6 +25,7 @@ pub async fn login(
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
+    // TODO: move this validation other part of the code
     if request.email.is_empty() || request.password.len() < 8 || !request.email.contains('@') {
         return Err(AuthAPIError::EmailOrPasswordIncorrect);
     }
@@ -40,7 +41,8 @@ pub async fn login(
     let result = store.get_user(&email).await;
     match result {
         Ok(_) => Ok((
-            jar.add(generate_auth_cookie(&email)?),
+            jar.add(generate_auth_cookie(&email)?)
+                .add(generate_refresh_cookie(&email)?),
             StatusCode::OK.into_response(),
         )),
 
