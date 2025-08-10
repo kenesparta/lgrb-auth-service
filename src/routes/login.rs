@@ -15,16 +15,28 @@ pub struct LoginRequest {
     pub password: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
-pub struct LoginResponse {
+// The login route can return 2 possible success responses.
+// This enum models each response!
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum LoginResponse {
+    RegularAuth,
+    TwoFactorAuth(TwoFactorAuthResponse),
+}
+
+// If a user requires 2FA, this JSON body should be returned!
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwoFactorAuthResponse {
     pub message: String,
+    #[serde(rename = "loginAttemptId")]
+    pub login_attempt_id: String,
 }
 
 pub async fn login(
     State(state): State<AppState>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
-) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
+) -> Result<(StatusCode, CookieJar, impl IntoResponse), AuthAPIError> {
     // TODO: move this validation other part of the code
     if request.email.is_empty() || request.password.len() < 8 || !request.email.contains('@') {
         return Err(AuthAPIError::EmailOrPasswordIncorrect);
@@ -38,19 +50,45 @@ pub async fn login(
         Err(_) => return Err(AuthAPIError::IncorrectCredentials),
     }
 
-    let result = store.get_user(&email).await;
-    match result {
-        Ok(_) => Ok((
-            jar.add(generate_auth_cookie(&email)?)
-                .add(generate_refresh_cookie(&email)?),
-            StatusCode::OK.into_response(),
-        )),
+    let user = match store.get_user(email).await {
+        Ok(user) => user,
+        Err(e) => {
+            return match e {
+                UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),
+                UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError),
+                UserStoreError::IncorrectCredentials => Err(AuthAPIError::IncorrectCredentials),
+                UserStoreError::UnexpectedError => Err(AuthAPIError::UnexpectedError),
+            };
+        }
+    };
 
-        Err(e) => match e {
-            UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),
-            UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError),
-            UserStoreError::IncorrectCredentials => Err(AuthAPIError::IncorrectCredentials),
-            UserStoreError::UnexpectedError => Err(AuthAPIError::UnexpectedError),
-        },
+    match user.requires_2fa() {
+        true => handle_2fa(jar).await,
+        false => handle_no_2fa(&user.email(), jar).await,
     }
+}
+
+async fn handle_2fa(
+    jar: CookieJar,
+) -> Result<(StatusCode, CookieJar, Json<LoginResponse>), AuthAPIError> {
+    Ok((
+        StatusCode::OK,
+        jar,
+        Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
+            message: "2FA required".to_string(),
+            login_attempt_id: "123456".to_string(),
+        })),
+    ))
+}
+
+async fn handle_no_2fa(
+    email: &Email,
+    jar: CookieJar,
+) -> Result<(StatusCode, CookieJar, Json<LoginResponse>), AuthAPIError> {
+    Ok((
+        StatusCode::OK,
+        jar.add(generate_auth_cookie(&email)?)
+            .add(generate_refresh_cookie(&email)?),
+        Json(LoginResponse::RegularAuth),
+    ))
 }

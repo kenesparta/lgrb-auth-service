@@ -3,6 +3,7 @@ use auth_service::utils::JWT_COOKIE_NAME;
 use fake::Fake;
 use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use reqwest::StatusCode;
+use auth_service::routes::TwoFactorAuthResponse;
 
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
@@ -107,4 +108,35 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
     assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
+    let app = TestApp::new().await;
+
+    let fake_email: String = SafeEmail().fake();
+    let fake_password: String = FakePassword(8..20).fake();
+
+    let signup_body = serde_json::json!({
+        "email": fake_email.clone(),
+        "password": fake_password.clone(),
+        "requires2FA": true
+    });
+    let response = app.post_signup(&signup_body).await;
+    assert_eq!(response.status().as_u16(), 201);
+
+
+    let login_body = serde_json::json!({
+        "email": fake_email,
+        "password": fake_password.clone(),
+    });
+    let response = app.post_login(&login_body).await;
+    assert_eq!(
+        response
+            .json::<TwoFactorAuthResponse>()
+            .await
+            .expect("Could not deserialize response body to TwoFactorAuthResponse")
+            .message,
+        "2FA required".to_owned()
+    );
 }
