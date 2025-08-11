@@ -1,9 +1,9 @@
 use crate::helpers::TestApp;
+use auth_service::routes::TwoFactorAuthResponse;
 use auth_service::utils::JWT_COOKIE_NAME;
 use fake::Fake;
 use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use reqwest::StatusCode;
-use auth_service::routes::TwoFactorAuthResponse;
 
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
@@ -125,7 +125,6 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let response = app.post_signup(&signup_body).await;
     assert_eq!(response.status().as_u16(), 201);
 
-
     let login_body = serde_json::json!({
         "email": fake_email,
         "password": fake_password.clone(),
@@ -135,7 +134,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         response
             .json::<TwoFactorAuthResponse>()
             .await
-            .expect("Could not deserialize response body to TwoFactorAuthResponse")
+            .expect("Could not deserialize the response body to TwoFactorAuthResponse")
             .message,
         "2FA required".to_owned()
     );
