@@ -2,7 +2,7 @@ use super::constants::JWT_COOKIE_NAME;
 use crate::domain::Email;
 use crate::utils::jwt::{COOKIE_DOMAIN, JWT_SECRET};
 use crate::utils::{JWT_REFRESH_COOKIE_NAME, REFRESH_TOKEN_TTL_SECONDS, TOKEN_TTL_SECONDS};
-use axum_extra::extract::cookie::Cookie;
+use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
@@ -14,6 +14,7 @@ pub fn generate_auth_cookie(email: &Email) -> Result<Cookie<'static>, GenerateTo
         .domain(COOKIE_DOMAIN.as_str())
         .path("/")
         .http_only(true)
+        .same_site(SameSite::Lax)
         .build();
     Ok(cookie)
 }

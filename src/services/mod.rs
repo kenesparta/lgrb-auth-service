@@ -1,6 +1,7 @@
-mod hash_banned_token_store;
-mod hash_map_twofa_store;
-mod hash_map_user_store;
+mod hashmap_banned_token_store;
+mod hashmap_two_fa_code_store;
+mod hashmap_user_store;
 
-pub use hash_banned_token_store::*;
-pub use hash_map_user_store::*;
+pub use hashmap_banned_token_store::*;
+pub use hashmap_two_fa_code_store::*;
+pub use hashmap_user_store::*;
