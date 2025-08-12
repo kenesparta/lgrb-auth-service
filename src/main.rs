@@ -1,7 +1,7 @@
 use auth_service::Application;
-use auth_service::app_state::{AppState, BannedTokenStoreType, UserStoreType};
+use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
-use auth_service::services::{HashmapUserStore, HashsetBannedTokenStore};
+use auth_service::services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore};
 use auth_service::utils::prod;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -10,10 +10,12 @@ use tonic_reflection::server::Builder as ReflectionBuilder;
 
 #[tokio::main]
 async fn main() {
-    let user_store: UserStoreType = Arc::new(RwLock::new(HashmapUserStore::default()));
-    let banned_tokens: BannedTokenStoreType =
-        Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
-    let app_state = AppState::new(user_store, banned_tokens);
+    let app_state = AppState::new(
+        Arc::new(RwLock::new(HashmapUserStore::default())),
+        Arc::new(RwLock::new(HashsetBannedTokenStore::default())),
+        Arc::new(RwLock::new(HashmapTwoFACodeStore::default())),
+    );
+
     let http_app = Application::build(app_state, prod::APP_ADDRESS)
         .await
         .expect("Failed to build app");
