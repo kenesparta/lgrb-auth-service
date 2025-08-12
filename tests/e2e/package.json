@@ -1,23 +1,24 @@
 {
-  "name": "auth-service-e2e-tests",
-  "version": "1.0.0",
-  "description": "End-to-end UI tests for authentication service",
   "scripts": {
-    "test": "playwright test",
-    "test:ui:firefox": "playwright test --project='UI Tests - Firefox'",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "test:signup": "playwright test signup",
-    "test:login": "playwright test login",
-    "test:2fa": "playwright test 2fa",
-    "test:ci": "playwright test --reporter=dot --workers=2",
-    "test:report": "playwright show-report",
-    "install:deps": "playwright install"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.54.1"
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+
+    "test:api": "cypress run --spec 'cypress/tests/api/**/*.cy.js'",
+    "test:e2e": "cypress run --spec 'cypress/tests/e2e/**/*.cy.js'",
+    "test:integration": "cypress run --spec 'cypress/tests/integration/**/*.cy.js'",
+    "test:all": "cypress run",
+
+    "test:api:headed": "cypress run --headed --spec 'cypress/tests/api/**/*.cy.js'",
+    "test:e2e:headed": "cypress run --headed --spec 'cypress/tests/e2e/**/*.cy.js'",
+
+    "test:smoke": "cypress run --spec 'cypress/tests/**/*smoke*.cy.js'",
+    "test:regression": "cypress run --spec 'cypress/tests/**/*.cy.js' --browser chrome"
   },
   "dependencies": {
-    "@types/node": "^24.1.0"
+    "@types/node": "^24.1.0",
+    "dotenv": "^17.2.1"
+  },
+  "devDependencies": {
+    "cypress": "^14.5.4"
   }
 }

@@ -1,7 +1,7 @@
 use auth_service::Application;
 use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
-use auth_service::services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore};
+use auth_service::services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient};
 use auth_service::utils::prod;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -14,6 +14,7 @@ async fn main() {
         Arc::new(RwLock::new(HashmapUserStore::default())),
         Arc::new(RwLock::new(HashsetBannedTokenStore::default())),
         Arc::new(RwLock::new(HashmapTwoFACodeStore::default())),
+        Arc::new(RwLock::new(MockEmailClient::new())),
     );
 
     let http_app = Application::build(app_state, prod::APP_ADDRESS)
