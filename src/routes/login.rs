@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::domain::data_stores::UserStoreError;
-use crate::domain::{AuthAPIError, Email, Password};
+use crate::domain::{AuthAPIError, Email, LoginAttemptId, Password, TwoFACode};
 use crate::utils::{generate_auth_cookie, generate_refresh_cookie};
 use axum::Json;
 use axum::extract::State;
@@ -63,22 +63,36 @@ pub async fn login(
     };
 
     match user.requires_2fa() {
-        true => handle_2fa(jar).await,
+        true => handle_2fa(&user.email(), &state, jar).await,
         false => handle_no_2fa(&user.email(), jar).await,
     }
 }
 
 async fn handle_2fa(
+    email: &Email,
+    state: &AppState,
     jar: CookieJar,
 ) -> Result<(StatusCode, CookieJar, Json<LoginResponse>), AuthAPIError> {
-    Ok((
-        StatusCode::OK,
-        jar,
-        Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
-            message: "2FA required".to_string(),
-            login_attempt_id: "123456".to_string(),
-        })),
-    ))
+    let login_attempt_id = LoginAttemptId::default();
+    let two_fa_code = TwoFACode::default();
+
+    match state
+        .two_fa_code_store
+        .write()
+        .await
+        .add_code(email, login_attempt_id.clone(), two_fa_code)
+        .await
+    {
+        Ok(_) => Ok((
+            StatusCode::OK,
+            jar,
+            Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
+                message: "2FA required".to_string(),
+                login_attempt_id: login_attempt_id.id(),
+            })),
+        )),
+        Err(_) => Err(AuthAPIError::UnexpectedError),
+    }
 }
 
 async fn handle_no_2fa(

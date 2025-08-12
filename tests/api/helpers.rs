@@ -1,5 +1,5 @@
 use auth_service::Application;
-use auth_service::app_state::{AppState, BannedTokenStoreType, UserStoreType};
+use auth_service::app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType, UserStoreType};
 use auth_service::services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore};
 use auth_service::utils::test;
 use reqwest::cookie::Jar;
@@ -11,6 +11,7 @@ pub struct TestApp {
     pub http_client: reqwest::Client,
     pub cookie_jar: Arc<Jar>,
     pub banned_tokens: BannedTokenStoreType,
+    pub two_fa_code: TwoFACodeStoreType,
 }
 
 impl TestApp {
@@ -38,6 +39,7 @@ impl TestApp {
             http_client,
             cookie_jar,
             banned_tokens,
+            two_fa_code,
         }
     }
 

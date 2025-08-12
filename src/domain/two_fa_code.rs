@@ -24,6 +24,10 @@ impl TwoFACode {
 
         Ok(TwoFACode(code))
     }
+
+    pub fn code(self) -> String {
+        self.0
+    }
 }
 
 impl Default for TwoFACode {

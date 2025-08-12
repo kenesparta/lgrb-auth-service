@@ -94,14 +94,14 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         "requires2FA": false
     });
     let response = app.post_signup(&signup_body).await;
-    assert_eq!(response.status().as_u16(), 201);
+    assert_eq!(response.status().as_u16(), StatusCode::CREATED);
 
     let login_body = serde_json::json!({
         "email": fake_email,
         "password": fake_password.clone(),
     });
     let response = app.post_login(&login_body).await;
-    assert_eq!(response.status().as_u16(), 200);
+    assert_eq!(response.status().as_u16(), StatusCode::OK);
 
     let auth_cookie = response
         .cookies()
@@ -123,19 +123,19 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         "requires2FA": true
     });
     let response = app.post_signup(&signup_body).await;
-    assert_eq!(response.status().as_u16(), 201);
+    assert_eq!(response.status().as_u16(), StatusCode::CREATED);
 
     let login_body = serde_json::json!({
         "email": fake_email,
         "password": fake_password.clone(),
     });
     let response = app.post_login(&login_body).await;
-    assert_eq!(
-        response
-            .json::<TwoFactorAuthResponse>()
-            .await
-            .expect("Could not deserialize the response body to TwoFactorAuthResponse")
-            .message,
-        "2FA required".to_owned()
-    );
+    assert_eq!(response.status().as_u16(), StatusCode::PARTIAL_CONTENT);
+
+    let json_body = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize the response body to TwoFactorAuthResponse");
+
+    assert_eq!(json_body.message, "2FA required".to_owned());
 }

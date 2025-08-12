@@ -16,6 +16,10 @@ impl LoginAttemptId {
             Err(_) => Err(LoginAttemptIdError::InvalidFormat),
         }
     }
+
+    pub fn id(self) -> String {
+        self.0
+    }
 }
 
 impl Default for LoginAttemptId {

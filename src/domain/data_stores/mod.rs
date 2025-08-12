@@ -1,7 +1,7 @@
 mod banned_token;
-mod twofa_code;
+mod two_fa_code;
 mod user;
 
 pub use banned_token::*;
-pub use twofa_code::*;
+pub use two_fa_code::*;
 pub use user::*;

@@ -1,6 +1,6 @@
 use crate::domain::Email;
 use crate::domain::loggin_attempt::LoginAttemptId;
-use crate::domain::twofa_code::TwoFACode;
+use crate::domain::two_fa_code::TwoFACode;
 
 #[cfg(test)]
 use mockall::automock;
@@ -18,7 +18,7 @@ pub enum TwoFACodeStoreError {
 pub trait TwoFACodeStore: Send + Sync {
     async fn add_code(
         &mut self,
-        email: Email,
+        email: &Email,
         login_attempt_id: LoginAttemptId,
         code: TwoFACode,
     ) -> Result<(), TwoFACodeStoreError>;
