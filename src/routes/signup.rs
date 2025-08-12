@@ -52,7 +52,9 @@ mod tests {
     use super::*;
     use crate::app_state::AppState;
     use crate::domain::AuthAPIError;
-    use crate::domain::data_stores::{MockBannedTokenStore, MockUserStore, UserStoreError};
+    use crate::domain::data_stores::{
+        MockBannedTokenStore, MockTwoFACodeStore, MockUserStore, UserStoreError,
+    };
     use axum::Json;
     use axum::extract::State;
     use fake::Fake;
@@ -63,10 +65,12 @@ mod tests {
     fn create_app_state_with_mock(
         mock_store: MockUserStore,
         mock_banned_token_store: MockBannedTokenStore,
+        mock_two_fa_code_store: MockTwoFACodeStore,
     ) -> AppState {
         AppState {
             user_store: Arc::new(RwLock::new(mock_store)),
             banned_token_store: Arc::new(RwLock::new(mock_banned_token_store)),
+            two_fa_code_store: Arc::new(RwLock::new(mock_two_fa_code_store)),
         }
     }
 
@@ -78,7 +82,11 @@ mod tests {
             .times(1)
             .returning(|_| Err(UserStoreError::UnexpectedError));
 
-        let state = create_app_state_with_mock(mock_store, MockBannedTokenStore::new());
+        let state = create_app_state_with_mock(
+            mock_store,
+            MockBannedTokenStore::new(),
+            MockTwoFACodeStore::new(),
+        );
         let request = SignupRequest {
             email: SafeEmail().fake(),
             password: FakePassword(8..20).fake(),
@@ -91,8 +99,11 @@ mod tests {
 
     #[tokio::test]
     async fn signup_fails_with_invalid_credentials_empty_email() {
-        let mock_store = MockUserStore::new();
-        let state = create_app_state_with_mock(mock_store, MockBannedTokenStore::new());
+        let state = create_app_state_with_mock(
+            MockUserStore::new(),
+            MockBannedTokenStore::new(),
+            MockTwoFACodeStore::new(),
+        );
         let request = SignupRequest {
             email: "".to_string(),
             password: FakePassword(8..20).fake(),
@@ -107,8 +118,11 @@ mod tests {
 
     #[tokio::test]
     async fn signup_fails_with_invalid_credentials_short_password() {
-        let mock_store = MockUserStore::new();
-        let state = create_app_state_with_mock(mock_store, MockBannedTokenStore::new());
+        let state = create_app_state_with_mock(
+            MockUserStore::new(),
+            MockBannedTokenStore::new(),
+            MockTwoFACodeStore::new(),
+        );
         let request = SignupRequest {
             email: SafeEmail().fake(),
             password: FakePassword(0..7).fake(),
@@ -124,8 +138,11 @@ mod tests {
 
     #[tokio::test]
     async fn signup_fails_with_invalid_credentials_no_at_symbol() {
-        let mock_store = MockUserStore::new();
-        let state = create_app_state_with_mock(mock_store, MockBannedTokenStore::new());
+        let state = create_app_state_with_mock(
+            MockUserStore::new(),
+            MockBannedTokenStore::new(),
+            MockTwoFACodeStore::new(),
+        );
         let request = SignupRequest {
             email: "testexample.com".to_string(),
             password: FakePassword(8..20).fake(),
@@ -141,8 +158,11 @@ mod tests {
 
     #[tokio::test]
     async fn signup_fails_with_invalid_email_format_during_user_creation() {
-        let mock_store = MockUserStore::new();
-        let state = create_app_state_with_mock(mock_store, MockBannedTokenStore::new());
+        let state = create_app_state_with_mock(
+            MockUserStore::new(),
+            MockBannedTokenStore::new(),
+            MockTwoFACodeStore::new(),
+        );
         let request = SignupRequest {
             email: "invalid@".to_string(),
             password: FakePassword(8..20).fake(),

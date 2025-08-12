@@ -1,4 +1,5 @@
 use crate::helpers::TestApp;
+use auth_service::routes::TwoFactorAuthResponse;
 use auth_service::utils::JWT_COOKIE_NAME;
 use fake::Fake;
 use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
@@ -93,18 +94,48 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         "requires2FA": false
     });
     let response = app.post_signup(&signup_body).await;
-    assert_eq!(response.status().as_u16(), 201);
+    assert_eq!(response.status().as_u16(), StatusCode::CREATED);
 
     let login_body = serde_json::json!({
         "email": fake_email,
         "password": fake_password.clone(),
     });
     let response = app.post_login(&login_body).await;
-    assert_eq!(response.status().as_u16(), 200);
+    assert_eq!(response.status().as_u16(), StatusCode::OK);
 
     let auth_cookie = response
         .cookies()
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
     assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
+    let app = TestApp::new().await;
+
+    let fake_email: String = SafeEmail().fake();
+    let fake_password: String = FakePassword(8..20).fake();
+
+    let signup_body = serde_json::json!({
+        "email": fake_email.clone(),
+        "password": fake_password.clone(),
+        "requires2FA": true
+    });
+    let response = app.post_signup(&signup_body).await;
+    assert_eq!(response.status().as_u16(), StatusCode::CREATED);
+
+    let login_body = serde_json::json!({
+        "email": fake_email,
+        "password": fake_password.clone(),
+    });
+    let response = app.post_login(&login_body).await;
+    assert_eq!(response.status().as_u16(), StatusCode::PARTIAL_CONTENT);
+
+    let json_body = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize the response body to TwoFactorAuthResponse");
+
+    assert_eq!(json_body.message, "2FA required".to_owned());
 }
