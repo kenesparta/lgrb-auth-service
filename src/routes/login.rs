@@ -84,7 +84,7 @@ async fn handle_2fa(
         .await
     {
         Ok(_) => Ok((
-            StatusCode::OK,
+            StatusCode::PARTIAL_CONTENT,
             jar,
             Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
                 message: "2FA required".to_string(),
