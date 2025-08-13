@@ -35,4 +35,10 @@ pub enum AuthAPIError {
 
     #[error("Generate token error")]
     GenerateTokenError(#[from] GenerateTokenError),
+
+    #[error("TwoFA malformed error")]
+    TwoFAMalformedError,
+
+    #[error("Login attempt id malformed error")]
+    LoginAttemptIdMalformedError,
 }

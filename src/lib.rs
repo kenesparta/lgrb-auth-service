@@ -49,6 +49,13 @@ impl IntoResponse for AuthAPIError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Error adding to banned tokens",
             ),
+            AuthAPIError::TwoFAMalformedError => (
+                StatusCode::BAD_REQUEST,
+                "Error two-factor authentication malformed",
+            ),
+            AuthAPIError::LoginAttemptIdMalformedError => {
+                (StatusCode::BAD_REQUEST, "Error login attempt id malformed")
+            }
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
         };
 

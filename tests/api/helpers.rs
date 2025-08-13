@@ -91,9 +91,13 @@ impl TestApp {
             .expect("Failed to execute the request.")
     }
 
-    pub async fn get_verify_2fa(&self) -> reqwest::Response {
+    pub async fn post_verify_2fa<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
         self.http_client
-            .post(&format!("{}/verify-2fa", &self.address))
+            .post(format!("{}/verify-2fa", &self.address))
+            .json(body)
             .send()
             .await
             .expect("Failed to execute the request.")
