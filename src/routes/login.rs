@@ -62,10 +62,11 @@ pub async fn login(
         }
     };
 
-    match user.requires_2fa() {
-        true => handle_2fa(&user.email(), &state, jar).await,
-        false => handle_no_2fa(&user.email(), jar).await,
+    if user.requires_2fa() {
+        return handle_2fa(&user.email(), &state, jar).await;
     }
+
+    handle_no_2fa(&user.email(), jar).await
 }
 
 async fn handle_2fa(

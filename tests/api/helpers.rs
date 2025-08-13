@@ -100,7 +100,7 @@ impl TestApp {
             .json(body)
             .send()
             .await
-            .expect("Failed to execute request.")
+            .expect("Failed to execute the request.")
     }
 
     pub async fn delete_account<Body>(&self, body: &Body) -> reqwest::Response
