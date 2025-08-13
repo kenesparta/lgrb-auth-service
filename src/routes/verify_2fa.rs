@@ -27,28 +27,37 @@ pub async fn verify_2fa(
     let email = validate_email(&request.email)?;
     let login_attempt_id = validate_login_attempt_id(&request.login_attempt_id)?;
     let two_fa_code = validate_two_fa_code(&request.two_fa_code)?;
-    let two_fa_code_store = state.two_fa_code_store.read().await;
-
     let email = &Email::new(email.to_owned())?;
-    let stored_data = two_fa_code_store
-        .get_code(&email)
+
+    match state.two_fa_code_store.read().await.get_code(&email).await {
+        Ok(stored_data) => {
+            let (stored_login_attempt, stored_two_fa_code) = stored_data;
+
+            if stored_login_attempt.clone().id() != login_attempt_id {
+                return Err(AuthAPIError::IncorrectCredentials);
+            }
+
+            if stored_two_fa_code.clone().code() != two_fa_code {
+                return Err(AuthAPIError::IncorrectCredentials);
+            }
+        }
+        Err(_) => return Err(AuthAPIError::IncorrectCredentials),
+    }
+
+    match state
+        .two_fa_code_store
+        .write()
         .await
-        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
-    let (stored_login_attempt, stored_two_fa_code) = stored_data;
-
-    if stored_login_attempt.clone().id() != login_attempt_id {
-        return Err(AuthAPIError::IncorrectCredentials);
+        .remove_code(&email)
+        .await
+    {
+        Ok(()) => Ok((
+            jar.add(generate_auth_cookie(&email)?)
+                .add(generate_refresh_cookie(&email)?),
+            StatusCode::OK.into_response(),
+        )),
+        Err(_) => Err(AuthAPIError::IncorrectCredentials),
     }
-
-    if stored_two_fa_code.clone().code() != two_fa_code {
-        return Err(AuthAPIError::IncorrectCredentials);
-    }
-
-    Ok((
-        jar.add(generate_auth_cookie(&email)?)
-            .add(generate_refresh_cookie(&email)?),
-        StatusCode::OK.into_response(),
-    ))
 }
 
 fn validate_email(email: &str) -> Result<&str, AuthAPIError> {

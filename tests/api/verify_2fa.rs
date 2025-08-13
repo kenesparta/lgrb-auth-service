@@ -1,11 +1,11 @@
 use crate::helpers::TestApp;
 use auth_service::domain::Email;
+use auth_service::utils::JWT_COOKIE_NAME;
 use fake::Fake;
 use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use fake::faker::number::en::NumberWithFormat;
 use reqwest::StatusCode;
 use uuid::Uuid;
-use auth_service::utils::JWT_COOKIE_NAME;
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
@@ -207,4 +207,53 @@ async fn should_return_200_if_correct_code() {
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
     assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
+async fn should_return_401_if_same_code_twice() {
+    let app = TestApp::new().await;
+    let fake_email: String = SafeEmail().fake();
+    let fake_password: String = FakePassword(8..20).fake();
+
+    let response = app
+        .post_signup(&serde_json::json!({
+            "email": fake_email,
+            "password": fake_password,
+            "requires2FA": true
+        }))
+        .await;
+    assert_eq!(response.status().as_u16(), StatusCode::CREATED);
+
+    let first_response = app
+        .post_login(&serde_json::json!({
+            "email": fake_email,
+            "password": fake_password,
+        }))
+        .await;
+    assert_eq!(
+        first_response.status().as_u16(),
+        StatusCode::PARTIAL_CONTENT
+    );
+
+    let email = &Email::new(fake_email.clone()).unwrap();
+    let two_fa_store = {
+        let guard = app.two_fa_code.read().await;
+        guard.get_code(&email).await.unwrap().clone()
+    };
+
+    let case = &serde_json::json!({
+        "email": fake_email,
+        "loginAttemptId": two_fa_store.clone().0.id(),
+        "2FACode": two_fa_store.clone().1.code(),
+    });
+    let response_2fa = app.post_verify_2fa(case).await;
+    assert_eq!(response_2fa.status().as_u16(), StatusCode::OK);
+
+    let case = &serde_json::json!({
+        "email": fake_email,
+        "loginAttemptId": two_fa_store.clone().0.id(),
+        "2FACode": two_fa_store.clone().1.code(),
+    });
+    let response_2fa = app.post_verify_2fa(case).await;
+    assert_eq!(response_2fa.status().as_u16(), StatusCode::UNAUTHORIZED);
 }
