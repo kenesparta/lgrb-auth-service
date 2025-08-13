@@ -5,6 +5,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      CAPTCHA_SITE_KEY: ${CAPTCHA_SITE_KEY}
+      CAPTCHA_SECRET_KEY: ${CAPTCHA_SECRET_KEY}
     restart: "always"
     ports:
       - "3000:3000"

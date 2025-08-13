@@ -1,6 +1,8 @@
 use auth_service::Application;
 use auth_service::app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType, UserStoreType};
-use auth_service::services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore};
+use auth_service::services::{
+    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient,
+};
 use auth_service::utils::test;
 use reqwest::cookie::Jar;
 use std::sync::Arc;
@@ -20,7 +22,13 @@ impl TestApp {
         let banned_tokens: BannedTokenStoreType =
             Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
-        let app_state = AppState::new(user_store, banned_tokens.clone(), two_fa_code.clone());
+        let email_service = Arc::new(RwLock::new(MockEmailClient::new()));
+        let app_state = AppState::new(
+            user_store,
+            banned_tokens.clone(),
+            two_fa_code.clone(),
+            email_service.clone(),
+        );
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
             .expect("Failed to build app");

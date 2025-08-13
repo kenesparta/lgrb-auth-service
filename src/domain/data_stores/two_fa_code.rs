@@ -1,5 +1,5 @@
 use crate::domain::Email;
-use crate::domain::loggin_attempt::LoginAttemptId;
+use crate::domain::login_attempt::LoginAttemptId;
 use crate::domain::two_fa_code::TwoFACode;
 
 #[cfg(test)]

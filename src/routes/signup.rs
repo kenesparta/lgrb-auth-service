@@ -25,6 +25,7 @@ pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
+    // todo: validate email format inside the domain
     if request.email.is_empty() || request.password.len() < 8 || !request.email.contains('@') {
         return Err(AuthAPIError::EmailOrPasswordIncorrect);
     }
@@ -55,6 +56,7 @@ mod tests {
     use crate::domain::data_stores::{
         MockBannedTokenStore, MockTwoFACodeStore, MockUserStore, UserStoreError,
     };
+    use crate::services::MockEmailClient;
     use axum::Json;
     use axum::extract::State;
     use fake::Fake;
@@ -66,11 +68,13 @@ mod tests {
         mock_store: MockUserStore,
         mock_banned_token_store: MockBannedTokenStore,
         mock_two_fa_code_store: MockTwoFACodeStore,
+        email_client: MockEmailClient,
     ) -> AppState {
         AppState {
             user_store: Arc::new(RwLock::new(mock_store)),
             banned_token_store: Arc::new(RwLock::new(mock_banned_token_store)),
             two_fa_code_store: Arc::new(RwLock::new(mock_two_fa_code_store)),
+            email_client: Arc::new(RwLock::new(email_client)),
         }
     }
 
@@ -86,6 +90,7 @@ mod tests {
             mock_store,
             MockBannedTokenStore::new(),
             MockTwoFACodeStore::new(),
+            MockEmailClient::new(),
         );
         let request = SignupRequest {
             email: SafeEmail().fake(),
@@ -103,6 +108,7 @@ mod tests {
             MockUserStore::new(),
             MockBannedTokenStore::new(),
             MockTwoFACodeStore::new(),
+            MockEmailClient::new(),
         );
         let request = SignupRequest {
             email: "".to_string(),
@@ -122,6 +128,7 @@ mod tests {
             MockUserStore::new(),
             MockBannedTokenStore::new(),
             MockTwoFACodeStore::new(),
+            MockEmailClient::new(),
         );
         let request = SignupRequest {
             email: SafeEmail().fake(),
@@ -142,6 +149,7 @@ mod tests {
             MockUserStore::new(),
             MockBannedTokenStore::new(),
             MockTwoFACodeStore::new(),
+            MockEmailClient::new(),
         );
         let request = SignupRequest {
             email: "testexample.com".to_string(),
@@ -162,6 +170,7 @@ mod tests {
             MockUserStore::new(),
             MockBannedTokenStore::new(),
             MockTwoFACodeStore::new(),
+            MockEmailClient::new(),
         );
         let request = SignupRequest {
             email: "invalid@".to_string(),
