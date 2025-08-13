@@ -1,5 +1,7 @@
-use crate::domain::AuthAPIError;
+use crate::app_state::AppState;
+use crate::domain::{AuthAPIError, Email};
 use axum::Json;
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde::Deserialize;
@@ -16,11 +18,29 @@ pub struct Verify2FARequest {
 }
 
 pub async fn verify_2fa(
+    State(state): State<AppState>,
     Json(request): Json<Verify2FARequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let email = validate_email(&request.email)?;
     let login_attempt_id = validate_login_attempt_id(&request.login_attempt_id)?;
     let two_fa_code = validate_two_fa_code(&request.two_fa_code)?;
+    let two_fa_code_store = state.two_fa_code_store.read().await;
+
+    let email = &Email::new(email.to_owned())?;
+    let stored_data = two_fa_code_store
+        .get_code(&email)
+        .await
+        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
+
+    let (stored_login_attempt, stored_two_fa_code) = stored_data;
+
+    if stored_login_attempt.clone().id() != login_attempt_id {
+        return Err(AuthAPIError::IncorrectCredentials);
+    }
+
+    if stored_two_fa_code.clone().code() != two_fa_code {
+        return Err(AuthAPIError::IncorrectCredentials);
+    }
 
     Ok(StatusCode::OK.into_response())
 }

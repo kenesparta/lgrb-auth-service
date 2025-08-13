@@ -1,4 +1,5 @@
 use crate::helpers::TestApp;
+use auth_service::domain::Email;
 use fake::Fake;
 use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use fake::faker::number::en::NumberWithFormat;
@@ -73,22 +74,34 @@ async fn should_return_401_if_incorrect_credentials() {
 
     let response = app
         .post_signup(&serde_json::json!({
-            "email": fake_email.clone(),
+            "email": fake_email,
             "password": fake_password,
-            "requires2FA": false
+            "requires2FA": true
         }))
         .await;
     assert_eq!(response.status().as_u16(), StatusCode::CREATED);
 
-    let fake_incorrect_pass: String = FakePassword(8..20).fake();
     let case = &serde_json::json!({
         "email": fake_email,
-        "password": fake_incorrect_pass,
+        "password": fake_password,
     });
 
     let response_login = app.post_login(case);
     assert_eq!(
         response_login.await.status().as_u16(),
+        StatusCode::PARTIAL_CONTENT
+    );
+
+    let new_fake_email: String = SafeEmail().fake();
+    let case = &serde_json::json!({
+        "email": new_fake_email,
+        "loginAttemptId": Uuid::new_v4().to_string(),
+        "2FACode": "123456",
+    });
+
+    let response_2fa = app.post_verify_2fa(case);
+    assert_eq!(
+        response_2fa.await.status().as_u16(),
         StatusCode::UNAUTHORIZED
     );
 }
@@ -108,17 +121,42 @@ async fn should_return_401_if_old_code() {
         .await;
     assert_eq!(response.status().as_u16(), StatusCode::CREATED);
 
-    let response = app
+    let email = &Email::new(fake_email.clone()).unwrap();
+    let first_response = app
         .post_login(&serde_json::json!({
             "email": fake_email,
             "password": fake_password,
         }))
         .await;
-    assert_eq!(response.status().as_u16(), StatusCode::PARTIAL_CONTENT);
+    assert_eq!(
+        first_response.status().as_u16(),
+        StatusCode::PARTIAL_CONTENT
+    );
 
-    // let response = app.post_logout().await;
-    // assert_eq!(response.status().as_u16(), StatusCode::OK);
-    //
-    // let response = app.post_logout().await;
-    // assert_eq!(response.status().as_u16(), StatusCode::BAD_REQUEST);
+    let two_fa_store = {
+        let guard = app.two_fa_code.read().await;
+        guard.get_code(&email).await.unwrap().clone()
+    };
+
+    let second_response = app
+        .post_login(&serde_json::json!({
+            "email": fake_email,
+            "password": fake_password,
+        }))
+        .await;
+    assert_eq!(
+        second_response.status().as_u16(),
+        StatusCode::PARTIAL_CONTENT
+    );
+
+    let case = &serde_json::json!({
+        "email": fake_email,
+        "loginAttemptId": two_fa_store.clone().0.id(),
+        "2FACode": two_fa_store.clone().1.code(),
+    });
+    let response_2fa = app.post_verify_2fa(case);
+    assert_eq!(
+        response_2fa.await.status().as_u16(),
+        StatusCode::UNAUTHORIZED
+    );
 }
