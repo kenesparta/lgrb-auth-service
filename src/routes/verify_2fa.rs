@@ -1,9 +1,11 @@
 use crate::app_state::AppState;
 use crate::domain::{AuthAPIError, Email};
+use crate::utils::{generate_auth_cookie, generate_refresh_cookie};
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -19,8 +21,9 @@ pub struct Verify2FARequest {
 
 pub async fn verify_2fa(
     State(state): State<AppState>,
+    jar: CookieJar,
     Json(request): Json<Verify2FARequest>,
-) -> Result<impl IntoResponse, AuthAPIError> {
+) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     let email = validate_email(&request.email)?;
     let login_attempt_id = validate_login_attempt_id(&request.login_attempt_id)?;
     let two_fa_code = validate_two_fa_code(&request.two_fa_code)?;
@@ -31,7 +34,6 @@ pub async fn verify_2fa(
         .get_code(&email)
         .await
         .map_err(|_| AuthAPIError::IncorrectCredentials)?;
-
     let (stored_login_attempt, stored_two_fa_code) = stored_data;
 
     if stored_login_attempt.clone().id() != login_attempt_id {
@@ -42,7 +44,11 @@ pub async fn verify_2fa(
         return Err(AuthAPIError::IncorrectCredentials);
     }
 
-    Ok(StatusCode::OK.into_response())
+    Ok((
+        jar.add(generate_auth_cookie(&email)?)
+            .add(generate_refresh_cookie(&email)?),
+        StatusCode::OK.into_response(),
+    ))
 }
 
 fn validate_email(email: &str) -> Result<&str, AuthAPIError> {
