@@ -74,7 +74,7 @@ mod tests {
             user_store: Arc::new(RwLock::new(mock_store)),
             banned_token_store: Arc::new(RwLock::new(mock_banned_token_store)),
             two_fa_code_store: Arc::new(RwLock::new(mock_two_fa_code_store)),
-            email_client: Arc::new((RwLock::new(email_client))),
+            email_client: Arc::new(RwLock::new(email_client)),
         }
     }
 

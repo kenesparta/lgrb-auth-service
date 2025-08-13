@@ -1,7 +1,9 @@
 use auth_service::Application;
 use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
-use auth_service::services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient};
+use auth_service::services::{
+    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient,
+};
 use auth_service::utils::prod;
 use std::sync::Arc;
 use tokio::sync::RwLock;

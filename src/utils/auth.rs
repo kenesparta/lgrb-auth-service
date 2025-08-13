@@ -25,6 +25,7 @@ pub fn generate_refresh_cookie(email: &Email) -> Result<Cookie<'static>, Generat
         .domain(COOKIE_DOMAIN.as_str())
         .path("/")
         .http_only(true)
+        .same_site(SameSite::Lax)
         .build();
 
     Ok(cookie)

@@ -23,9 +23,9 @@ fn set_cookie_domain() -> String {
     dotenv().ok();
 
     let cookie_subdomain =
-        std_env::var(env::COOKIE_DOMAIN_ENV_VAR).expect("COOKIE_SUBDOMAIN must be set.");
+        std_env::var(env::COOKIE_DOMAIN_ENV_VAR).expect("COOKIE_DOMAIN must be set.");
     if cookie_subdomain.is_empty() {
-        panic!("COOKIE_SUBDOMAIN must not be empty.");
+        panic!("COOKIE_DOMAIN must not be empty.");
     }
 
     cookie_subdomain

@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
 use crate::domain::data_stores::UserStoreError;
 use crate::domain::{AuthAPIError, Email, LoginAttemptId, Password, TwoFACode};
-use crate::utils::{generate_auth_cookie, generate_refresh_cookie};
+use crate::utils::{email, generate_auth_cookie, generate_refresh_cookie};
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -75,6 +75,21 @@ async fn handle_2fa(
 ) -> Result<(StatusCode, CookieJar, Json<LoginResponse>), AuthAPIError> {
     let login_attempt_id = LoginAttemptId::default();
     let two_fa_code = TwoFACode::default();
+
+    match state
+        .email_client
+        .read()
+        .await
+        .send_email(
+            email,
+            email::SUBJECT,
+            format!("your code is here: {}", two_fa_code.clone()).as_str(),
+        )
+        .await
+    {
+        Ok(_) => (),
+        Err(_) => return Err(AuthAPIError::UnexpectedError),
+    }
 
     match state
         .two_fa_code_store
