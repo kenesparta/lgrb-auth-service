@@ -8,7 +8,7 @@ modular architecture. This README is generated from the actual codebase to ensur
 - User Signup/Login with email validation
 - Optional Two-Factor Authentication (2FA) via one-time code
 - JWT-based auth using secure HttpOnly cookies (access + refresh)
-- RESTful HTTP API and gRPC interface for token verification
+- RESTFull HTTP API and gRPC interface for token verification
 - Account deletion
 - Token refresh endpoint
 - Health check
@@ -23,7 +23,7 @@ modular architecture. This README is generated from the actual codebase to ensur
 - gRPC: Tonic service generated from proto/auth_service.proto
 - Utilities: JWT, cookie, constants, and auth helper functions
 
-HTTP server binds to 0.0.0.0:3000 by default; gRPC server binds to 0.0.0.0:50051.
+HTTP server binds to `0.0.0.0:3000` by default; gRPC server binds to `0.0.0.0:50051`.
 
 ## Configuration
 
@@ -61,12 +61,12 @@ Run:
 
 Build and run image:
 
-- docker build -t auth-service .
-- docker run -e JWT_SECRET=... -e COOKIE_DOMAIN=localhost -p 3000:3000 -p 50051:50051 auth-service
+- `docker build -t auth-service .`
+- `docker run -e JWT_SECRET=... -e COOKIE_DOMAIN=localhost -p 3000:3000 -p 50051:50051 auth-service`
 
 Docker Compose (recommended):
 
-- Ensure env vars in your shell or a .env file
+- Ensure env vars in your shell or a `.env` file
 - docker compose up
 - Ports: 3000->3000 (HTTP), 50051->50051 (gRPC)
 
@@ -116,7 +116,7 @@ The OpenAPI schema lives at api_schema.yml (importable in Swagger Editor). Key e
     - If requires2FA=true: 206 with loginAttemptId; a code is emailed (MockEmailClient during dev/tests).
 3) Verify: POST /verify-2fa with email, loginAttemptId, and 2FACode. On success, cookies are set.
 4) Refresh: POST /refresh-token when access token expires to rotate cookies.
-5) Logout: POST /logout removes cookie and bans the token for its lifetime.
+5) Logout: POST /logout removes the cookie and bans the token for its lifetime.
 
 Notes:
 
@@ -126,12 +126,14 @@ Notes:
 ### Curl examples
 
 - Signup:
-  curl -s -X POST http://localhost:3000/signup -H 'Content-Type: application/json' -d '{"email":"user@example.com","
-  password":"password123","requires2FA":false}'
+  ```
+  curl -s -X POST http://localhost:3000/signup -H 'Content-Type: application/json' -d '{"email":"user@example.com","password":"password123","requires2FA":false}'
+  ```
 
 - Login (no 2FA):
-  curl -i -X POST http://localhost:3000/login -H 'Content-Type: application/json' -d '{"email":"user@example.com","
-  password":"password123"}'
+  ```
+  curl -i -X POST http://localhost:3000/login -H 'Content-Type: application/json' -d '{"email":"user@example.com","password":"password123"}'
+  ```
 
 - Refresh tokens:
   curl -i -X POST http://localhost:3000/refresh-token --cookie "jwt-refresh=..."
@@ -174,7 +176,7 @@ A simple Google reCAPTCHA v3 verification helper exists (src/routes/verify_captc
 
 - Panic at startup: ensure JWT_SECRET and COOKIE_DOMAIN are set (non-empty)
 - CORS blocked: set CORS_ALLOWED_ORIGINS to include your frontend origin
-- Cookies not set in browser: ensure COOKIE_DOMAIN matches the host you are using
+- Cookies aren't set in browser: ensure COOKIE_DOMAIN matches the host you are using
 - 206 on login: this indicates 2FA is enabled; proceed with /verify-2fa
 
 ## License
