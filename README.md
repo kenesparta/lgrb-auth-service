@@ -1,96 +1,182 @@
+# lgrb-auth-service
+
+Authentication service with optional email-based 2FA, HTTP (Axum) and gRPC (Tonic) interfaces, JWT cookies, and a clean
+modular architecture. This README is generated from the actual codebase to ensure accuracy.
+
 ## Features
 
-- **User Authentication**: Secure user registration and login with email validation
-- **Two-Factor Authentication (2FA)**: Optional 2FA support for enhanced security
-- **RESTful API**: HTTP endpoints for all authentication operations
-- **gRPC Support**: High-performance gRPC interface alongside REST API
-- **Account Management**: User account deletion and management
-- **Token Verification**: JWT token validation and verification
-- **Health Monitoring**: Health check endpoints for service monitoring
+- User Signup/Login with email validation
+- Optional Two-Factor Authentication (2FA) via one-time code
+- JWT-based auth using secure HttpOnly cookies (access + refresh)
+- RESTful HTTP API and gRPC interface for token verification
+- Account deletion
+- Token refresh endpoint
+- Health check
+- CORS configuration via env
+- Docker/Compose deployment with Ubuntu Chiseled minimal image
 
-## Architecture
+## Architecture (high level)
 
-The service follows a clean architecture pattern with:
+- Domain: core types and business rules (Email, Password, User, TwoFACode, etc.)
+- Services: pluggable stores (in-memory HashMap/HashSet) and email client abstraction
+- HTTP: Axum routes wired in src/lib.rs
+- gRPC: Tonic service generated from proto/auth_service.proto
+- Utilities: JWT, cookie, constants, and auth helper functions
 
-- **Domain Layer**: Core business logic and entities (User, Email, Password)
-- **Service Layer**: Application services and business operations
-- **Data Store**: Pluggable storage layer with HashMap implementation
-- **Routes**: HTTP REST API endpoints
-- **gRPC**: Protocol buffer-based gRPC services
+HTTP server binds to 0.0.0.0:3000 by default; gRPC server binds to 0.0.0.0:50051.
 
-## API Endpoints
+## Configuration
 
-- `GET /` - Serves static assets
-- `GET /health-check` - Health status endpoint
-- `POST /signup` - User registration
-- `POST /login` - User authentication
-- `POST /logout` - User logout
-- `POST /verify-2fa` - Two-factor authentication verification
-- `POST /verify-token` - JWT token verification
-- `DELETE /delete-account` - Account deletion
+Environment variables (loadable via .env thanks to dotenvy):
 
-## Technology Stack
+- JWT_SECRET (required): secret used to sign JWTs
+- COOKIE_DOMAIN (required): cookie Domain attribute (e.g., localhost)
+- CORS_ALLOWED_ORIGINS (optional, default: http://127.0.0.1,http://localhost)
+- CAPTCHA_SITE_KEY (optional): for UI integration (compose wiring)
+- CAPTCHA_SECRET_KEY (optional, used by verify_captcha module)
 
-- **Framework**: Axum for HTTP server
-- **gRPC**: Tonic for high-performance RPC
-- **Async Runtime**: Tokio
-- **Serialization**: Serde for JSON, Prost for Protocol Buffers
-- **Validation**: Validator for email validation
-- **Error Handling**: thiserror for structured error types
-- **Testing**: Mockall for mocking, quickcheck for property-based testing
-- **Containerization**: Multi-stage Docker build with Ubuntu Chiseled images
+Token and cookie parameters (from code):
 
-## Getting Started
+- Cookie names: jwt (access), jwt-refresh (refresh)
+- Access token TTL: 600 seconds
+- Refresh token TTL: 3600 seconds
+- Cookies are HttpOnly; SameSite=Lax; Path=/; Domain from COOKIE_DOMAIN
 
-### Prerequisites
+## Run locally
 
-- Rust 1.86 or later
-- Docker (optional, for containerized deployment)
+Prerequisites:
 
-### Running Locally
+- Rust 1.86+
+- Set env vars (or create a .env in repo root):
+    - JWT_SECRET=my-secret
+    - COOKIE_DOMAIN=localhost
 
-``` bash
-cargo run --bin auth-service
-```
+Run:
 
-### Running with Docker
+- cargo run --bin auth-service
+- HTTP: http://localhost:3000
+- gRPC: 127.0.0.1:50051 (plaintext by default in local)
 
-``` bash
-docker build -t auth-service .
-docker run -p 8080:8080 auth-service
-```
+## Docker
 
-### Running with Docker Compose
+Build and run image:
 
-``` bash
-docker compose up
-```
+- docker build -t auth-service .
+- docker run -e JWT_SECRET=... -e COOKIE_DOMAIN=localhost -p 3000:3000 -p 50051:50051 auth-service
 
-## Development
+Docker Compose (recommended):
 
-The project includes comprehensive testing with unit tests and integration tests. Run tests with:
+- Ensure env vars in your shell or a .env file
+- docker compose up
+- Ports: 3000->3000 (HTTP), 50051->50051 (gRPC)
 
-``` bash
-cargo test
-```
+Image details:
 
-For development, the service supports hot reloading and includes extensive error handling and logging.
+- Multi-stage with cargo-chef for dependency caching
+- Final image based on Ubuntu Chiseled (scratch rootfs) for minimal surface
 
-## Security Features
+## REST API
 
-- Email format validation using the validator crate
-- Secure password handling
-- Two-factor authentication support
-- Input validation and sanitization
-- Structured error responses without sensitive information leakage
+The OpenAPI schema lives at api_schema.yml (importable in Swagger Editor). Key endpoints wired in src/lib.rs:
 
-## Docker Deployment
+- GET /
+    - Serves static assets from ./assets
+- GET /health-check
+    - 200 OK
+- POST /signup
+    - Body: { "email": string, "password": string (>=8 chars), "requires2FA": boolean }
+    - 201 Created on success
+    - 400 if validation fails; 409 if user exists
+- POST /login
+    - Body: { "email": string, "password": string }
+    - 200 OK + Set-Cookie: jwt, jwt-refresh when 2FA is not required
+    - 206 Partial Content when 2FA is required with JSON: { message, loginAttemptId }
+    - 400/401 on failures
+- POST /verify-2fa
+    - Body: { "email": string, "loginAttemptId": string, "2FACode": string(6 digits) }
+    - 200 OK + Set-Cookie: jwt, jwt-refresh on success
+    - 400 if malformed inputs; 401 if incorrect
+- POST /refresh-token
+    - Reads jwt-refresh cookie, must be a valid refresh token
+    - 200 OK + sets fresh jwt and jwt-refresh cookies
+    - JSON response: { message, access_token, refresh_token }
+    - 400/401 on missing/invalid token
+- POST /logout
+    - Requires jwt cookie; validates it, bans token, then clears cookie
+    - 200 OK on success; 400 if missing token; 401 if invalid
+- DELETE /delete-account
+    - Body: { "email": string }
+    - 204 No Content on success
 
-The service uses a multi-stage Docker build process:
+### Auth and 2FA flow
 
-1. **Chef Stage**: Caches Rust dependencies for faster builds
-2. **Builder Stage**: Compiles the application
-3. **Chiseled Ubuntu**: Creates a minimal, secure runtime image
+1) Signup: POST /signup with requires2FA true/false.
+2) Login: POST /login
+    - If requires2FA=false: 200 with cookies.
+    - If requires2FA=true: 206 with loginAttemptId; a code is emailed (MockEmailClient during dev/tests).
+3) Verify: POST /verify-2fa with email, loginAttemptId, and 2FACode. On success, cookies are set.
+4) Refresh: POST /refresh-token when access token expires to rotate cookies.
+5) Logout: POST /logout removes cookie and bans the token for its lifetime.
 
-The final image is based on Ubuntu Chiseled for security and minimal attack surface, containing only the necessary
-runtime dependencies.
+Notes:
+
+- JWT.claims: { sub: email, exp: unix_ts, token_type: "access"|"refresh" }
+- Cookies are HttpOnly; store JWTs in cookies, not localStorage.
+
+### Curl examples
+
+- Signup:
+  curl -s -X POST http://localhost:3000/signup -H 'Content-Type: application/json' -d '{"email":"user@example.com","
+  password":"password123","requires2FA":false}'
+
+- Login (no 2FA):
+  curl -i -X POST http://localhost:3000/login -H 'Content-Type: application/json' -d '{"email":"user@example.com","
+  password":"password123"}'
+
+- Refresh tokens:
+  curl -i -X POST http://localhost:3000/refresh-token --cookie "jwt-refresh=..."
+
+- Logout:
+  curl -i -X POST http://localhost:3000/logout --cookie "jwt=..."
+
+## gRPC API
+
+- Proto: proto/auth_service.proto
+- Service: auth_service.AuthService
+- Method: VerifyToken(VerifyTokenRequest) -> VerifyTokenResponse
+- Example with grpcurl:
+    - grpcurl -plaintext 127.0.0.1:50051 describe
+    - grpcurl -plaintext -d '{"token":"your-token"}' 127.0.0.1:50051 auth_service.AuthService/VerifyToken
+
+Server reflection is enabled in main (tonic_reflection), so you can use grpcurl without proto.
+
+## CORS
+
+- Configure with CORS_ALLOWED_ORIGINS comma-separated list (defaults to http://127.0.0.1,http://localhost). Credentials
+  are enabled.
+
+## CAPTCHA (optional)
+
+A simple Google reCAPTCHA v3 verification helper exists (src/routes/verify_captcha.rs). To use it set:
+
+- CAPTCHA_SITE_KEY, CAPTCHA_SECRET_KEY
+
+## Development & Testing
+
+- Run tests: cargo test
+- Integration tests hit HTTP routes and gRPC verify (see tests/api)
+- Useful Make targets:
+    - make dev-test (runs container and http tests using hurl)
+    - make grpc-test (grpcurl samples against running server)
+    - make grpc-proto (grpcurl using local proto)
+
+## Troubleshooting
+
+- Panic at startup: ensure JWT_SECRET and COOKIE_DOMAIN are set (non-empty)
+- CORS blocked: set CORS_ALLOWED_ORIGINS to include your frontend origin
+- Cookies not set in browser: ensure COOKIE_DOMAIN matches the host you are using
+- 206 on login: this indicates 2FA is enabled; proceed with /verify-2fa
+
+## License
+
+MIT (or the license applicable to your project)
