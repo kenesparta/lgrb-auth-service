@@ -6,6 +6,7 @@ use std::env as std_env;
 lazy_static! {
     pub static ref JWT_SECRET: String = set_token();
     pub static ref COOKIE_DOMAIN: String = set_cookie_domain();
+    pub static ref DATABASE_URL: String = set_database_url();
 }
 
 fn set_token() -> String {
@@ -29,4 +30,16 @@ fn set_cookie_domain() -> String {
     }
 
     cookie_subdomain
+}
+
+fn set_database_url() -> String {
+    dotenv().ok();
+
+    let set_database_url =
+        std_env::var(env::DATABASE_URL_ENV_VAR).expect("DATABASE_URL must be set.");
+    if set_database_url.is_empty() {
+        panic!("DATABASE_URL must not be empty.");
+    }
+
+    set_database_url
 }

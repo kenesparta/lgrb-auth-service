@@ -1,6 +1,6 @@
 mod auth;
 mod constants;
-mod jwt;
+mod lazy;
 
 pub use auth::*;
 pub use constants::*;

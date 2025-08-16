@@ -1,17 +1,20 @@
-use auth_service::Application;
 use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
 use auth_service::services::{
     HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient,
 };
 use auth_service::utils::prod;
+use auth_service::{Application, get_postgres_pool};
+use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tonic::transport::Server;
 use tonic_reflection::server::Builder as ReflectionBuilder;
+use auth_service::utils::env::DATABASE_URL_ENV_VAR;
 
 #[tokio::main]
 async fn main() {
+    let pg_pool = configure_postgresql().await;
     let app_state = AppState::new(
         Arc::new(RwLock::new(HashmapUserStore::default())),
         Arc::new(RwLock::new(HashsetBannedTokenStore::default())),
@@ -48,4 +51,20 @@ async fn main() {
         _ = http_server => println!("HTTP server finished"),
         _ = grpc_server => println!("gRPC server finished"),
     }
+}
+
+async fn configure_postgresql() -> PgPool {
+    let database_url = std::env::var(DATABASE_URL_ENV_VAR)
+        .expect("DATABASE_URL must be set in environment variables");
+
+    let pg_pool = get_postgres_pool(&database_url)
+        .await
+        .expect("Failed to create a Postgres connection pool!");
+
+    sqlx::migrate!()
+        .run(&pg_pool)
+        .await
+        .expect("Failed to run migrations");
+
+    pg_pool
 }

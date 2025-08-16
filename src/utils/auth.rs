@@ -1,6 +1,6 @@
 use super::constants::JWT_COOKIE_NAME;
 use crate::domain::Email;
-use crate::utils::jwt::{COOKIE_DOMAIN, JWT_SECRET};
+use crate::utils::lazy::{COOKIE_DOMAIN, JWT_SECRET};
 use crate::utils::{JWT_REFRESH_COOKIE_NAME, REFRESH_TOKEN_TTL_SECONDS, TOKEN_TTL_SECONDS};
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;

@@ -6,6 +6,7 @@ pub const REFRESH_TOKEN_TTL_SECONDS: i64 = 3600;
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";
     pub const COOKIE_DOMAIN_ENV_VAR: &str = "COOKIE_DOMAIN";
+    pub const DATABASE_URL_ENV_VAR: &str = "DATABASE_URL";
 }
 
 pub mod prod {

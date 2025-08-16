@@ -16,6 +16,8 @@ use axum::routing::{delete, get, post};
 use axum::serve::Serve;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 use std::error::Error;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
@@ -107,4 +109,8 @@ fn cors() -> Result<CorsLayer, Box<dyn Error>> {
         .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::PUT])
         .allow_credentials(true)
         .allow_origin(origins?))
+}
+
+pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+    PgPoolOptions::new().max_connections(5).connect(url).await
 }
