@@ -11,3 +11,19 @@ services:
     ports:
       - "3000:3000"
       - "50051:50051"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15.2-alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+
+volumes:
+  db:
+    driver: local
