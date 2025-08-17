@@ -1,12 +1,12 @@
 use auth_service::Application;
 use auth_service::app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType, UserStoreType};
-use auth_service::services::{
-    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient,
-};
+
 use auth_service::utils::test;
 use reqwest::cookie::Jar;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use auth_service::services::data_stores::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore};
+use auth_service::services::MockEmailClient;
 
 pub struct TestApp {
     pub address: String,

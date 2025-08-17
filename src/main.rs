@@ -1,8 +1,10 @@
 use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
-use auth_service::services::{
-    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient,
+use auth_service::services::MockEmailClient;
+use auth_service::services::data_stores::{
+    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore,
 };
+use auth_service::utils::env::DATABASE_URL_ENV_VAR;
 use auth_service::utils::prod;
 use auth_service::{Application, get_postgres_pool};
 use sqlx::PgPool;
@@ -10,7 +12,6 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tonic::transport::Server;
 use tonic_reflection::server::Builder as ReflectionBuilder;
-use auth_service::utils::env::DATABASE_URL_ENV_VAR;
 
 #[tokio::main]
 async fn main() {

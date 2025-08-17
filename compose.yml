@@ -7,6 +7,7 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
       CAPTCHA_SITE_KEY: ${CAPTCHA_SITE_KEY}
       CAPTCHA_SECRET_KEY: ${CAPTCHA_SECRET_KEY}
+      SQLX_OFFLINE: ${SQLX_OFFLINE}
     restart: "always"
     ports:
       - "3000:3000"
