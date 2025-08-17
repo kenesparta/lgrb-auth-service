@@ -15,3 +15,9 @@ grpc-test:
 
 grpc-proto:
 	@grpcurl -plaintext -proto ./proto/auth_service.proto -d '{"token": "my-token"}' 127.0.0.1:50051 auth_service.AuthService/VerifyToken
+
+sqlx:
+	cargo install sqlx-cli
+
+migrate-add:
+	sqlx migrate add -r create_users_table
