@@ -37,10 +37,18 @@ impl UserStore for PostgresUserStore {
 
         match result {
             Ok(_) => Ok(()),
-            Err(sqlx::Error::Database(db_err))
-                if db_err.constraint() == Some("users_email_key") =>
-            {
-                Err(UserStoreError::UserAlreadyExists)
+            Err(sqlx::Error::Database(db_err)) => {
+                if let Some(constraint) = db_err.constraint() {
+                    if constraint.contains("email") || constraint.contains("users_email") {
+                        return Err(UserStoreError::UserAlreadyExists);
+                    }
+                }
+
+                if db_err.code() == Some(std::borrow::Cow::Borrowed("23505")) {
+                    return Err(UserStoreError::UserAlreadyExists);
+                }
+
+                Err(UserStoreError::UnexpectedError)
             }
             Err(_) => Err(UserStoreError::UnexpectedError),
         }
