@@ -2,7 +2,7 @@ use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
 use auth_service::services::MockEmailClient;
 use auth_service::services::data_stores::{
-    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore,
+    HashmapTwoFACodeStore, HashsetBannedTokenStore, PostgresUserStore,
 };
 use auth_service::utils::env::DATABASE_URL_ENV_VAR;
 use auth_service::utils::prod;
@@ -17,7 +17,7 @@ use tonic_reflection::server::Builder as ReflectionBuilder;
 async fn main() {
     let pg_pool = configure_postgresql().await;
     let app_state = AppState::new(
-        Arc::new(RwLock::new(HashmapUserStore::default())),
+        Arc::new(RwLock::new(PostgresUserStore::new(pg_pool))),
         Arc::new(RwLock::new(HashsetBannedTokenStore::default())),
         Arc::new(RwLock::new(HashmapTwoFACodeStore::default())),
         Arc::new(RwLock::new(MockEmailClient::new())),
