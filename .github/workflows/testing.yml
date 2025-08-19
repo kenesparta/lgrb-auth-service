@@ -36,7 +36,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y protobuf-compiler
 
-- name: Set up PostgreSQL
+    - name: Set up PostgreSQL
       run: |
         sudo systemctl start postgresql.service
         sudo -u postgres createuser --createdb --superuser runner
