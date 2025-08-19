@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 
 #[tokio::test]
 async fn should_return_204_if_deleted_successfully() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -24,4 +24,6 @@ async fn should_return_204_if_deleted_successfully() {
 
     let delete_response = app.delete_account(&rc).await;
     assert_eq!(delete_response.status().as_u16(), StatusCode::NO_CONTENT);
+
+    app.clean_up().await;
 }

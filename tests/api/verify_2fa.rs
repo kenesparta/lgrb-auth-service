@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let uuid_random: String = Uuid::new_v4().to_string();
     let fake_2fa_code: String = NumberWithFormat("######").fake();
@@ -29,11 +29,13 @@ async fn should_return_422_if_malformed_input() {
             test_case
         );
     }
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let uuid_random: String = Uuid::new_v4().to_string();
     let fake_2fa_code: String = NumberWithFormat("######").fake();
@@ -65,11 +67,13 @@ async fn should_return_400_if_invalid_input() {
             test_case
         );
     }
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -105,11 +109,13 @@ async fn should_return_401_if_incorrect_credentials() {
         response_2fa.await.status().as_u16(),
         StatusCode::UNAUTHORIZED
     );
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_old_code() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -160,11 +166,13 @@ async fn should_return_401_if_old_code() {
         response_2fa.await.status().as_u16(),
         StatusCode::UNAUTHORIZED
     );
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_200_if_correct_code() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -207,11 +215,13 @@ async fn should_return_200_if_correct_code() {
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
     assert!(!auth_cookie.value().is_empty());
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_same_code_twice() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -256,4 +266,6 @@ async fn should_return_401_if_same_code_twice() {
     });
     let response_2fa = app.post_verify_2fa(case).await;
     assert_eq!(response_2fa.status().as_u16(), StatusCode::UNAUTHORIZED);
+
+    app.clean_up().await;
 }

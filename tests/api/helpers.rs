@@ -7,8 +7,9 @@ use auth_service::utils::env::DATABASE_URL_ENV_VAR;
 use auth_service::utils::test;
 use auth_service::{Application, get_postgres_pool};
 use reqwest::cookie::Jar;
-use sqlx::postgres::PgPoolOptions;
-use sqlx::{Executor, PgPool};
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use sqlx::{Connection, Executor, PgConnection, PgPool};
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -19,11 +20,14 @@ pub struct TestApp {
     pub cookie_jar: Arc<Jar>,
     pub banned_tokens: BannedTokenStoreType,
     pub two_fa_code: TwoFACodeStoreType,
+    pub clean_up_called: bool,
+    pub db_name: String,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
-        let pg_pool = configure_postgresql().await;
+        let db_name = Uuid::new_v4().to_string();
+        let pg_pool = configure_postgresql(db_name.as_str()).await;
 
         let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
         let banned_tokens: BannedTokenStoreType =
@@ -48,6 +52,7 @@ impl TestApp {
             .cookie_provider(cookie_jar.clone())
             .build()
             .expect("Failed to create an HTTP client");
+        let clean_up_called = false;
 
         TestApp {
             address,
@@ -55,6 +60,8 @@ impl TestApp {
             cookie_jar,
             banned_tokens,
             two_fa_code,
+            clean_up_called,
+            db_name,
         }
     }
 
@@ -121,23 +128,47 @@ impl TestApp {
             .await
             .expect("Failed to execute the request.")
     }
+
+    pub async fn clean_up(&mut self) {
+        delete_database(&self.db_name).await;
+        self.clean_up_called = true;
+    }
 }
 
-async fn configure_postgresql() -> PgPool {
+impl Drop for TestApp {
+    fn drop(&mut self) {
+        if self.clean_up_called {
+            return;
+        }
+
+        let db_name = self.db_name.clone();
+        if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            handle.spawn(async move {
+                delete_database(&db_name).await;
+            });
+        } else {
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Runtime::new()
+                    .expect("Failed to create runtime for cleanup");
+                rt.block_on(async move {
+                    delete_database(&db_name).await;
+                });
+            });
+        }
+        self.clean_up_called = true;
+    }
+}
+
+async fn configure_postgresql(db_name: &str) -> PgPool {
     let postgresql_conn_url = std::env::var(DATABASE_URL_ENV_VAR)
         .expect("DATABASE_URL must be set in environment variables");
-
-    // We are creating a new database for each test case, and we need to ensure each database has a unique name!
-    let db_name = Uuid::new_v4().to_string();
 
     configure_database(&postgresql_conn_url, &db_name).await;
 
     let postgresql_conn_url_with_db = format!("{}/{}", postgresql_conn_url, db_name);
-
-    // Create a new connection pool and return it
     get_postgres_pool(&postgresql_conn_url_with_db)
         .await
-        .expect("Failed to create Postgres connection pool!")
+        .expect("Failed to create a Postgres connection pool!")
 }
 
 async fn configure_database(db_conn_string: &str, db_name: &str) {
@@ -145,13 +176,13 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
     let connection = PgPoolOptions::new()
         .connect(db_conn_string)
         .await
-        .expect("Failed to create Postgres connection pool.");
+        .expect("Failed to create a Postgres connection pool.");
 
     // Create a new database
     connection
         .execute(format!(r#"CREATE DATABASE "{}";"#, db_name).as_str())
         .await
-        .expect("Failed to create database.");
+        .expect("Failed to create a database.");
 
     // Connect to new database
     let db_conn_string = format!("{}/{}", db_conn_string, db_name);
@@ -159,11 +190,45 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
     let connection = PgPoolOptions::new()
         .connect(&db_conn_string)
         .await
-        .expect("Failed to create Postgres connection pool.");
+        .expect("Failed to create a Postgres connection pool.");
 
-    // Run migrations against new database
     sqlx::migrate!()
         .run(&connection)
         .await
         .expect("Failed to migrate the database");
+}
+
+async fn delete_database(db_name: &str) {
+    let postgresql_conn_url: String = std::env::var(DATABASE_URL_ENV_VAR)
+        .expect("DATABASE_URL must be set in environment variables");
+
+    let connection_options = PgConnectOptions::from_str(&postgresql_conn_url)
+        .expect("Failed to parse PostgreSQL connection string");
+
+    let mut connection = PgConnection::connect_with(&connection_options)
+        .await
+        .expect("Failed to connect to Postgres");
+
+    // Kill any active connections to the database
+    connection
+        .execute(
+            format!(
+                r#"
+                SELECT pg_terminate_backend(pg_stat_activity.pid)
+                FROM pg_stat_activity
+                WHERE pg_stat_activity.datname = '{}'
+                  AND pid <> pg_backend_pid();
+        "#,
+                db_name
+            )
+            .as_str(),
+        )
+        .await
+        .expect("Failed to drop the database.");
+
+    // Drop the database
+    connection
+        .execute(format!(r#"DROP DATABASE "{}";"#, db_name).as_str())
+        .await
+        .expect("Failed to drop the database.");
 }
