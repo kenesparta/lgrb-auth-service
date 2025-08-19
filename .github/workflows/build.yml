@@ -6,9 +6,26 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  SQLX_OFFLINE: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15.2-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7.0-alpine
+        ports:
+          - 6379:6379
 
     steps:
     - name: Checkout code
@@ -31,24 +48,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y protobuf-compiler
 
-    - name: Set up PostgreSQL
-      run: |
-        sudo systemctl start postgresql.service
-        sudo -u postgres createuser --createdb --superuser runner
-        sudo -u postgres psql -c "ALTER USER runner PASSWORD 'password';"
-        createdb auth_service_test
-
     - name: Build and test auth-service code
       working-directory: .
       run: |
         export JWT_SECRET=secret
         export COOKIE_DOMAIN=127.0.0.1
-        export DATABASE_URL="postgres://runner:password@localhost:5432/auth_service_test"
-
-        cargo install sqlx-cli --no-default-features --features native-tls,postgres
-        sqlx migrate run
-        cargo sqlx prepare
-        export SQLX_OFFLINE=true
+        export DATABASE_URL=postgres://postgres:password@localhost:5432
         cargo build --verbose
         cargo test --verbose
 
