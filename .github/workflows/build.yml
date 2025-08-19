@@ -54,9 +54,11 @@ jobs:
         export JWT_SECRET=secret
         export COOKIE_DOMAIN=127.0.0.1
         export DATABASE_URL=postgres://postgres:password@localhost:5432
-        cargo install sqlx-cli
-        cargo sqlx prepare
+        export SQLX_OFFLINE=true
+
+        cargo install sqlx-cli --no-default-features --features native-tls,postgres
         sqlx migrate run
+        cargo sqlx prepare
         cargo build --verbose
         cargo test --verbose
 
