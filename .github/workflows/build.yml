@@ -6,9 +6,26 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  SQLX_OFFLINE: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15.2-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7.0-alpine
+        ports:
+          - 6379:6379
 
     steps:
     - name: Checkout code
@@ -36,6 +53,12 @@ jobs:
       run: |
         export JWT_SECRET=secret
         export COOKIE_DOMAIN=127.0.0.1
+        export DATABASE_URL=postgres://postgres:password@localhost:5432
+        export SQLX_OFFLINE=true
+
+        cargo install sqlx-cli --no-default-features --features native-tls,postgres
+        sqlx migrate run
+        cargo sqlx prepare
         cargo build --verbose
         cargo test --verbose
 

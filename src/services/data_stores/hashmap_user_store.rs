@@ -20,8 +20,11 @@ impl UserStore for HashmapUserStore {
         }
     }
 
-    async fn get_user(&self, email: &Email) -> Result<&User, UserStoreError> {
-        self.users.get(email).ok_or(UserStoreError::UserNotFound)
+    async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
+        self.users
+            .get(email)
+            .ok_or(UserStoreError::UserNotFound)
+            .cloned()
     }
 
     async fn validate_user(
@@ -97,7 +100,7 @@ mod tests {
         let user_found = hash_map_user
             .get_user(&Email::new(user_02_shared).unwrap())
             .await;
-        assert_eq!(user_found, Ok(&user_02));
+        assert_eq!(user_found, Ok(user_02));
 
         let user_not_found = hash_map_user
             .get_user(&Email::new(SafeEmail().fake()).unwrap())
