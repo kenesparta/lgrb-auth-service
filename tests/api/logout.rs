@@ -6,14 +6,15 @@ use reqwest::{StatusCode, Url};
 
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), StatusCode::BAD_REQUEST);
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     app.cookie_jar.add_cookie_str(
         &format!(
@@ -25,11 +26,13 @@ async fn should_return_401_if_invalid_token() {
 
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), StatusCode::UNAUTHORIZED);
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_200_if_valid_jwt_cookie() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -58,13 +61,17 @@ async fn should_return_200_if_valid_jwt_cookie() {
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), StatusCode::OK);
 
-    let banned_tokens = app.banned_tokens.read().await;
-    assert!(banned_tokens.is_banned(&auth_cookie.value()).await.unwrap());
+    {
+        let banned_tokens = app.banned_tokens.read().await;
+        assert!(banned_tokens.is_banned(&auth_cookie.value()).await.unwrap());
+    }
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_logout_called_twice_in_a_row() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -90,4 +97,6 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
 
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), StatusCode::BAD_REQUEST);
+
+    app.clean_up().await;
 }

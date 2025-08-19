@@ -7,7 +7,7 @@ use reqwest::StatusCode;
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -33,11 +33,13 @@ async fn should_return_422_if_malformed_input() {
             test_case
         );
     }
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_201_if_valid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -59,11 +61,13 @@ async fn should_return_201_if_valid_input() {
         response.json::<SignupResponse>().await.unwrap(),
         expected_response
     );
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -98,11 +102,13 @@ async fn should_return_400_if_invalid_input() {
             "Email or password incorrect"
         );
     }
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_409_if_email_already_exists() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let fake_email: String = SafeEmail().fake();
     let fake_password: String = FakePassword(8..20).fake();
 
@@ -125,4 +131,6 @@ async fn should_return_409_if_email_already_exists() {
             .error_message,
         "User already exists"
     );
+
+    app.clean_up().await;
 }
