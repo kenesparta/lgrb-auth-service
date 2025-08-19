@@ -4,9 +4,8 @@ use auth_service::services::MockEmailClient;
 use auth_service::services::data_stores::{
     HashmapTwoFACodeStore, HashsetBannedTokenStore, PostgresUserStore,
 };
-use auth_service::utils::env::DATABASE_URL_ENV_VAR;
-use auth_service::utils::prod;
-use auth_service::{Application, get_postgres_pool};
+use auth_service::utils::{DATABASE_URL, REDIS_HOST_NAME, prod};
+use auth_service::{Application, get_postgres_pool, get_redis_client};
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -55,10 +54,7 @@ async fn main() {
 }
 
 async fn configure_postgresql() -> PgPool {
-    let database_url = std::env::var(DATABASE_URL_ENV_VAR)
-        .expect("DATABASE_URL must be set in environment variables");
-
-    let pg_pool = get_postgres_pool(&database_url)
+    let pg_pool = get_postgres_pool(&DATABASE_URL)
         .await
         .expect("Failed to create a Postgres connection pool!");
 
@@ -68,4 +64,11 @@ async fn configure_postgresql() -> PgPool {
         .expect("Failed to run migrations");
 
     pg_pool
+}
+
+fn configure_redis() -> redis::Connection {
+    get_redis_client(REDIS_HOST_NAME.to_owned())
+        .expect("Failed to get a Redis client")
+        .get_connection()
+        .expect("Failed to get Redis connection")
 }

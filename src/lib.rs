@@ -9,6 +9,7 @@ use crate::domain::AuthAPIError;
 use crate::routes::{
     delete_account, health_check, login, logout, refresh_token, signup, verify_2fa,
 };
+use crate::utils::PGSQL_MAX_CONNECTIONS;
 use app_state::AppState;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -112,5 +113,13 @@ fn cors() -> Result<CorsLayer, Box<dyn Error>> {
 }
 
 pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
-    PgPoolOptions::new().max_connections(5).connect(url).await
+    PgPoolOptions::new()
+        .max_connections(PGSQL_MAX_CONNECTIONS)
+        .connect(url)
+        .await
+}
+
+pub fn get_redis_client(redis_hostname: String) -> redis::RedisResult<redis::Client> {
+    let redis_url = format!("redis://{}/", redis_hostname);
+    redis::Client::open(redis_url)
 }
