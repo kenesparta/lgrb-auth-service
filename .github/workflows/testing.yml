@@ -61,6 +61,7 @@ jobs:
         export DATABASE_URL=postgres://postgres:password@localhost:5432
         cargo install sqlx-cli
         cargo sqlx prepare
+        sqlx migrate run
         cargo build --verbose
         cargo test --verbose
 
