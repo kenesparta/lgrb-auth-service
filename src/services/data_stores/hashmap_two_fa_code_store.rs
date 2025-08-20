@@ -36,9 +36,10 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
     async fn get_code(
         &self,
         email: &Email,
-    ) -> Result<&(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
+    ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
         self.codes
             .get(email)
+            .cloned()
             .ok_or(TwoFACodeStoreError::UserNotFound)
     }
 }

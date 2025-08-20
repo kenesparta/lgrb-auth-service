@@ -4,7 +4,6 @@ pub const TOKEN_TTL_SECONDS: u64 = 600;
 pub const REFRESH_TOKEN_TTL_SECONDS: u64 = 3600;
 pub const PGSQL_MAX_CONNECTIONS: u32 = 10;
 pub const DEFAULT_REDIS_HOSTNAME: &str = "127.0.0.1";
-pub const BANNED_TOKEN_KEY_PREFIX: &str = "banned_token:";
 
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";
@@ -23,4 +22,9 @@ pub mod test {
 
 pub mod email {
     pub const SUBJECT: &str = "Let's get Rusty Bootcamp code";
+}
+
+pub mod redis_env {
+    pub const BANNED_TOKEN_KEY_PREFIX: &str = "banned_token:";
+    pub const TWO_FA_CODE_PREFIX: &str = "two_fa_code:";
 }

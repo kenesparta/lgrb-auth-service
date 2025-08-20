@@ -1,5 +1,6 @@
 use crate::domain::data_stores::{BannedTokenStore, BannedTokenStoreError};
-use crate::utils::{BANNED_TOKEN_KEY_PREFIX, TOKEN_TTL_SECONDS};
+use crate::utils::TOKEN_TTL_SECONDS;
+use crate::utils::redis_env::BANNED_TOKEN_KEY_PREFIX;
 use redis::aio::MultiplexedConnection;
 
 pub struct RedisBannedTokenStore {
