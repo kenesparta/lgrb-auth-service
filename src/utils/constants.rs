@@ -1,12 +1,16 @@
 pub const JWT_COOKIE_NAME: &str = "jwt";
 pub const JWT_REFRESH_COOKIE_NAME: &str = "jwt-refresh";
-pub const TOKEN_TTL_SECONDS: i64 = 600;
-pub const REFRESH_TOKEN_TTL_SECONDS: i64 = 3600;
+pub const TOKEN_TTL_SECONDS: u64 = 600;
+pub const REFRESH_TOKEN_TTL_SECONDS: u64 = 3600;
+pub const PGSQL_MAX_CONNECTIONS: u32 = 10;
+pub const DEFAULT_REDIS_HOSTNAME: &str = "127.0.0.1";
+pub const BANNED_TOKEN_KEY_PREFIX: &str = "banned_token:";
 
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";
     pub const COOKIE_DOMAIN_ENV_VAR: &str = "COOKIE_DOMAIN";
     pub const DATABASE_URL_ENV_VAR: &str = "DATABASE_URL";
+    pub const REDIS_HOST_NAME_ENV_VAR: &str = "REDIS_HOST_NAME";
 }
 
 pub mod prod {

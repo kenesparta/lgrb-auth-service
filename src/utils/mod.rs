@@ -4,3 +4,4 @@ mod lazy;
 
 pub use auth::*;
 pub use constants::*;
+pub use lazy::*;
