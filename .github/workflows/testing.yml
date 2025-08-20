@@ -20,7 +20,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15.2-alpine
+        image: postgres:17.6-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
@@ -28,7 +28,7 @@ jobs:
         ports:
           - 5432:5432
       redis:
-        image: redis:7.0-alpine
+        image: redis:8.2-alpine
         ports:
           - 6379:6379
 

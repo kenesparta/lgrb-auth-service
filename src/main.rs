@@ -2,7 +2,7 @@ use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
 use auth_service::services::MockEmailClient;
 use auth_service::services::data_stores::{
-    HashmapTwoFACodeStore, HashsetBannedTokenStore, PostgresUserStore,
+    HashmapTwoFACodeStore, PostgresUserStore, RedisBannedTokenStore,
 };
 use auth_service::utils::{DATABASE_URL, REDIS_HOST_NAME, prod};
 use auth_service::{Application, get_postgres_pool, get_redis_client};
@@ -14,10 +14,13 @@ use tonic_reflection::server::Builder as ReflectionBuilder;
 
 #[tokio::main]
 async fn main() {
-    let pg_pool = configure_postgresql().await;
     let app_state = AppState::new(
-        Arc::new(RwLock::new(PostgresUserStore::new(pg_pool))),
-        Arc::new(RwLock::new(HashsetBannedTokenStore::default())),
+        Arc::new(RwLock::new(PostgresUserStore::new(
+            configure_postgresql().await,
+        ))),
+        Arc::new(RwLock::new(RedisBannedTokenStore::new(
+            configure_redis().await,
+        ))),
         Arc::new(RwLock::new(HashmapTwoFACodeStore::default())),
         Arc::new(RwLock::new(MockEmailClient::new())),
     );
@@ -66,9 +69,12 @@ async fn configure_postgresql() -> PgPool {
     pg_pool
 }
 
-fn configure_redis() -> redis::Connection {
-    get_redis_client(REDIS_HOST_NAME.to_owned())
-        .expect("Failed to get a Redis client")
-        .get_connection()
-        .expect("Failed to get Redis connection")
+async fn configure_redis() -> redis::aio::MultiplexedConnection {
+    let client =
+        get_redis_client(REDIS_HOST_NAME.to_owned()).expect("Failed to get a Redis client");
+
+    client
+        .get_multiplexed_async_connection()
+        .await
+        .expect("Failed to create Redis connection manager")
 }
