@@ -2,7 +2,7 @@ use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
 use auth_service::services::MockEmailClient;
 use auth_service::services::data_stores::{
-    HashmapTwoFACodeStore, PostgresUserStore, RedisBannedTokenStore,
+    PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore,
 };
 use auth_service::utils::{DATABASE_URL, REDIS_HOST_NAME, prod};
 use auth_service::{Application, get_postgres_pool, get_redis_client};
@@ -21,7 +21,9 @@ async fn main() {
         Arc::new(RwLock::new(RedisBannedTokenStore::new(
             configure_redis().await,
         ))),
-        Arc::new(RwLock::new(HashmapTwoFACodeStore::default())),
+        Arc::new(RwLock::new(RedisTwoFACodeStore::new(
+            configure_redis().await,
+        ))),
         Arc::new(RwLock::new(MockEmailClient::new())),
     );
 

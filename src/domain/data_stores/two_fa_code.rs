@@ -23,8 +23,8 @@ pub trait TwoFACodeStore: Send + Sync {
         code: TwoFACode,
     ) -> Result<(), TwoFACodeStoreError>;
     async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError>;
-    async fn get_code<'two_fa>(
-        &'two_fa self,
+    async fn get_code(
+        &self,
         email: &Email,
-    ) -> Result<&'two_fa (LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
+    ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
