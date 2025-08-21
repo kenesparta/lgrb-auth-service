@@ -44,27 +44,40 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
     }
 
     async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
-        // TODO:
-        // 1. Create a new key using the get_key helper function.
-        // 2. Call the del command on the Redis connection to delete the 2FA code entry.
-        // Return TwoFACodeStoreError::UnexpectedError if the operation fails.
-
-        todo!()
+        Ok(redis::cmd("DEL")
+            .arg(&get_key(email))
+            .query_async::<_, ()>(&mut self.conn.clone())
+            .await
+            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?)
     }
 
     async fn get_code(
         &self,
         email: &Email,
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
-        // TODO:
-        // 1. Create a new key using the get_key helper function.
-        // 2. Call the get command on the Redis connection to get the value stored for the key.
-        // Return TwoFACodeStoreError::LoginAttemptIdNotFound if the operation fails.
-        // If the operation succeeds, call serde_json::from_str to parse the JSON string into a TwoFATuple.
-        // Then, parse the login attempt ID string and 2FA code string into a LoginAttemptId and TwoFACode type respectively.
-        // Return TwoFACodeStoreError::UnexpectedError if parsing fails.
+        let key = get_key(email);
 
-        todo!()
+        let value = redis::cmd("GET")
+            .arg(&key)
+            .query_async::<_, Option<String>>(&mut self.conn.clone())
+            .await
+            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+        match value {
+            Some(json_string) => {
+                let two_fa_tuple: TwoFATuple = serde_json::from_str(&json_string)
+                    .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+                let login_attempt_id = LoginAttemptId::new(two_fa_tuple.0)
+                    .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+                let two_fa_code = TwoFACode::new(two_fa_tuple.1)
+                    .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+                Ok((login_attempt_id, two_fa_code))
+            }
+            None => Err(TwoFACodeStoreError::LoginAttemptIdNotFound),
+        }
     }
 }
 
