@@ -14,15 +14,16 @@ use tonic_reflection::server::Builder as ReflectionBuilder;
 
 #[tokio::main]
 async fn main() {
+    let redis_client = configure_redis().await;
     let app_state = AppState::new(
         Arc::new(RwLock::new(PostgresUserStore::new(
             configure_postgresql().await,
         ))),
         Arc::new(RwLock::new(RedisBannedTokenStore::new(
-            configure_redis().await,
+            redis_client.clone(),
         ))),
         Arc::new(RwLock::new(RedisTwoFACodeStore::new(
-            configure_redis().await,
+            redis_client,
         ))),
         Arc::new(RwLock::new(MockEmailClient::new())),
     );

@@ -9,6 +9,8 @@ services:
       CAPTCHA_SECRET_KEY: ${CAPTCHA_SECRET_KEY}
       SQLX_OFFLINE: ${SQLX_OFFLINE}
       REDIS_HOST_NAME: ${REDIS_HOST_NAME}
+      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     restart: "always"
     ports:
       - "3000:3000"

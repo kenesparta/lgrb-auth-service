@@ -27,14 +27,12 @@ impl TestApp {
     pub async fn new() -> Self {
         let db_name = Uuid::new_v4().to_string();
         let pg_pool = configure_postgresql(db_name.as_str()).await;
+        let redis_conn = configure_redis().await;
 
         let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
-        let banned_tokens: BannedTokenStoreType = Arc::new(RwLock::new(
-            RedisBannedTokenStore::new(configure_redis().await),
-        ));
-        let two_fa_code = Arc::new(RwLock::new(RedisTwoFACodeStore::new(
-            configure_redis().await,
-        )));
+        let banned_tokens: BannedTokenStoreType =
+            Arc::new(RwLock::new(RedisBannedTokenStore::new(redis_conn.clone())));
+        let two_fa_code = Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_conn)));
         let email_service = Arc::new(RwLock::new(MockEmailClient::new()));
         let app_state = AppState::new(
             user_store,
