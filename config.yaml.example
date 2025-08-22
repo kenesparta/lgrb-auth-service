@@ -1,0 +1,8 @@
+jwt_secret: "secret"
+cookie_domain: "127.0.0.1"
+database_url: "postgres://postgres:password@pgsql-db:5432"
+redis_host_name: "redis-cache"
+cors_allowed_origins: ""
+captcha_site_key: ""
+captcha_secret_key: ""
+postgres_password: ""

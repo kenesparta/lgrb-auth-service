@@ -2,23 +2,27 @@ services:
   auth-service:
     image: kenesparta/lgr-auth-service
     environment:
-      JWT_SECRET: ${JWT_SECRET}
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      CAPTCHA_SITE_KEY: ${CAPTCHA_SITE_KEY}
-      CAPTCHA_SECRET_KEY: ${CAPTCHA_SECRET_KEY}
-      SQLX_OFFLINE: ${SQLX_OFFLINE}
-      REDIS_HOST_NAME: ${REDIS_HOST_NAME}
-      DATABASE_URL: ${DATABASE_URL}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AUTH_LGRB_JWT_SECRET: ${AUTH_LGRB_JWT_SECRET}
+      AUTH_LGRB_COOKIE_DOMAIN: ${AUTH_LGRB_COOKIE_DOMAIN}
+      AUTH_LGRB_CORS_ALLOWED_ORIGINS: ${AUTH_LGRB_CORS_ALLOWED_ORIGINS}
+      AUTH_LGRB_CAPTCHA_SITE_KEY: ${AUTH_LGRB_CAPTCHA_SITE_KEY}
+      AUTH_LGRB_CAPTCHA_SECRET_KEY: ${AUTH_LGRB_CAPTCHA_SECRET_KEY}
+      AUTH_LGRB_SQLX_OFFLINE: ${AUTH_LGRB_SQLX_OFFLINE}
+      AUTH_LGRB_REDIS_HOST_NAME: ${AUTH_LGRB_REDIS_HOST_NAME}
+      AUTH_LGRB_DATABASE_URL: ${AUTH_LGRB_DATABASE_URL}
+      AUTH_LGRB_POSTGRES_PASSWORD: ${AUTH_LGRB_POSTGRES_PASSWORD}
     restart: "always"
     ports:
       - "3000:3000"
       - "50051:50051"
     depends_on:
-      - db
+      - pgsql-db
+      - redis-cache
+    networks:
+      - app-network
 
-  db:
+  pgsql-db:
+    container_name: pgsql-db
     image: postgres:17.6-alpine
     restart: always
     environment:
@@ -27,13 +31,22 @@ services:
       - "5432:5432"
     volumes:
       - db:/var/lib/postgresql/data
+    networks:
+      - app-network
 
-  redis:
+  redis-cache:
+    container_name: redis-cache
     image: redis:8.2-alpine
     restart: always
     ports:
       - "6379:6379"
+    networks:
+      - app-network
 
 volumes:
   db:
     driver: local
+
+networks:
+  app-network:
+    driver: bridge

@@ -9,7 +9,7 @@ use crate::domain::AuthAPIError;
 use crate::routes::{
     delete_account, health_check, login, logout, refresh_token, signup, verify_2fa,
 };
-use crate::utils::PGSQL_MAX_CONNECTIONS;
+use crate::utils::{CORS_ALLOWED_ORIGINS, PGSQL_MAX_CONNECTIONS};
 use app_state::AppState;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -98,9 +98,7 @@ impl Application {
 }
 
 fn cors() -> Result<CorsLayer, Box<dyn Error>> {
-    let allowed_origins = std::env::var("CORS_ALLOWED_ORIGINS")
-        .unwrap_or_else(|_| "http://127.0.0.1,http://localhost".to_string());
-
+    let allowed_origins = &CORS_ALLOWED_ORIGINS;
     let origins: Result<Vec<_>, _> = allowed_origins
         .split(',')
         .map(|origin| origin.trim().parse())

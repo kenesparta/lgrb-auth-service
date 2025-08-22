@@ -50,10 +50,10 @@ jobs:
     - name: Build and test auth-service code
       working-directory: .
       run: |
-        export JWT_SECRET=secret
-        export COOKIE_DOMAIN=127.0.0.1
-        export DATABASE_URL=postgres://postgres:password@localhost:5432
-        export REDIS_HOST_NAME=127.0.0.1
+        export AUTH_LGRB_JWT_SECRET=secret
+        export AUTH_LGRB_COOKIE_DOMAIN=127.0.0.1
+        export AUTH_LGRB_DATABASE_URL=postgres://postgres:password@localhost:5432
+        export AUTH_LGRB_REDIS_HOST_NAME=127.0.0.1
         export SQLX_OFFLINE=true
 
         cargo install sqlx-cli --no-default-features --features native-tls,postgres

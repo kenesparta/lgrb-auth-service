@@ -1,7 +1,7 @@
 mod auth;
+mod config;
 mod constants;
-mod lazy;
 
 pub use auth::*;
+pub use config::*;
 pub use constants::*;
-pub use lazy::*;

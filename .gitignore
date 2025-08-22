@@ -3,3 +3,4 @@
 .idea
 /proto/*.bin
 .sqlx
+config.yaml

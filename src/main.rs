@@ -22,9 +22,7 @@ async fn main() {
         Arc::new(RwLock::new(RedisBannedTokenStore::new(
             redis_client.clone(),
         ))),
-        Arc::new(RwLock::new(RedisTwoFACodeStore::new(
-            redis_client,
-        ))),
+        Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_client))),
         Arc::new(RwLock::new(MockEmailClient::new())),
     );
 
