@@ -6,3 +6,5 @@ cors_allowed_origins: ""
 captcha_site_key: ""
 captcha_secret_key: ""
 postgres_password: ""
+token_ttl_seconds: 600
+refresh_token_ttl_seconds: 3600

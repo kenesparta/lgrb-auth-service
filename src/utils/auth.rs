@@ -75,14 +75,14 @@ pub struct TokenPair {
 }
 
 pub fn generate_token_pair(email: &Email) -> Result<TokenPair, GenerateTokenError> {
-    let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS as i64)
+    let delta = chrono::Duration::try_seconds(*TOKEN_TTL_SECONDS)
         .ok_or(GenerateTokenError::UnexpectedError)?;
     let access_exp = Utc::now()
         .checked_add_signed(delta)
         .ok_or(GenerateTokenError::UnexpectedError)?
         .timestamp();
 
-    let delta = chrono::Duration::try_seconds(REFRESH_TOKEN_TTL_SECONDS as i64)
+    let delta = chrono::Duration::try_seconds(*REFRESH_TOKEN_TTL_SECONDS)
         .ok_or(GenerateTokenError::UnexpectedError)?;
     let refresh_exp = Utc::now()
         .checked_add_signed(delta)
@@ -180,7 +180,7 @@ mod tests {
         let access_claims = validate_token(&token_pair.access_token).await.unwrap();
         let refresh_claims = validate_token(&token_pair.refresh_token).await.unwrap();
 
-        let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS as i64).unwrap();
+        let delta = chrono::Duration::try_seconds(*TOKEN_TTL_SECONDS).unwrap();
         let expected_access_min =
             before_generation + delta - chrono::Duration::try_seconds(1).unwrap();
         let expected_access_max =
@@ -191,7 +191,7 @@ mod tests {
         assert!(access_exp_time >= expected_access_min);
         assert!(access_exp_time <= expected_access_max);
 
-        let delta = chrono::Duration::try_seconds(REFRESH_TOKEN_TTL_SECONDS as i64).unwrap();
+        let delta = chrono::Duration::try_seconds(*REFRESH_TOKEN_TTL_SECONDS).unwrap();
         let expected_refresh_min =
             before_generation + delta - chrono::Duration::try_seconds(1).unwrap();
         let expected_refresh_max =
@@ -202,7 +202,7 @@ mod tests {
         assert!(refresh_exp_time >= expected_refresh_min);
         assert!(refresh_exp_time <= expected_refresh_max);
 
-        if REFRESH_TOKEN_TTL_SECONDS > TOKEN_TTL_SECONDS {
+        if *REFRESH_TOKEN_TTL_SECONDS > *TOKEN_TTL_SECONDS {
             assert!(refresh_exp_time > access_exp_time);
         }
     }

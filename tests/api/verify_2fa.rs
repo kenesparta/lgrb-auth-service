@@ -5,6 +5,7 @@ use fake::Fake;
 use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use fake::faker::number::en::NumberWithFormat;
 use reqwest::StatusCode;
+use std::time::Duration;
 use uuid::Uuid;
 
 #[tokio::test]

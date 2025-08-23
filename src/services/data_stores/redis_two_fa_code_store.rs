@@ -36,7 +36,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
 
         Ok(redis::cmd("SETEX")
             .arg(&get_key(email))
-            .arg(TOKEN_TTL_SECONDS)
+            .arg(*TOKEN_TTL_SECONDS)
             .arg(&two_fa)
             .query_async::<_, ()>(&mut self.conn.clone())
             .await

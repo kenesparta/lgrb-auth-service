@@ -1,7 +1,5 @@
 pub const JWT_COOKIE_NAME: &str = "jwt";
 pub const JWT_REFRESH_COOKIE_NAME: &str = "jwt-refresh";
-pub const TOKEN_TTL_SECONDS: u64 = 600;
-pub const REFRESH_TOKEN_TTL_SECONDS: u64 = 3600;
 pub const PGSQL_MAX_CONNECTIONS: u32 = 10;
 
 pub mod prod {

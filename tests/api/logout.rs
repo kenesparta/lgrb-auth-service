@@ -1,8 +1,9 @@
 use crate::helpers::TestApp;
-use auth_service::utils::JWT_COOKIE_NAME;
+use auth_service::utils::{JWT_COOKIE_NAME, TOKEN_TTL_SECONDS};
 use fake::Fake;
 use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use reqwest::{StatusCode, Url};
+use std::time::Duration;
 
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
@@ -97,6 +98,48 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
 
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), StatusCode::BAD_REQUEST);
+
+    app.clean_up().await;
+}
+
+#[tokio::test]
+async fn test_redis_banned_token_ttl_integration() {
+    let mut app = TestApp::new().await;
+
+    let fake_email: String = SafeEmail().fake();
+    let fake_password: String = FakePassword(8..20).fake();
+
+    app.post_signup(&serde_json::json!({
+        "email": fake_email.clone(),
+        "password": fake_password,
+        "requires2FA": false
+    }))
+    .await;
+
+    let login_response = app
+        .post_login(&serde_json::json!({
+            "email": fake_email,
+            "password": fake_password,
+        }))
+        .await;
+
+    let auth_cookie = login_response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    app.post_logout().await;
+
+    {
+        let banned_tokens = app.banned_tokens.read().await;
+        assert!(banned_tokens.is_banned(&auth_cookie.value()).await.unwrap());
+    }
+
+    tokio::time::sleep(Duration::from_secs(*TOKEN_TTL_SECONDS as u64 + 1)).await;
+    {
+        let banned_tokens = app.banned_tokens.read().await;
+        assert!(!banned_tokens.is_banned(&auth_cookie.value()).await.unwrap());
+    }
 
     app.clean_up().await;
 }

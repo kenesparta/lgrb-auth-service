@@ -13,10 +13,8 @@ pub struct AppConfig {
     pub captcha_site_key: String,
     pub captcha_secret_key: String,
     pub postgres_password: String,
-}
-
-fn default_cors_origins() -> String {
-    "http://127.0.0.1,http://localhost".to_string()
+    pub token_ttl_seconds: i64,
+    pub refresh_token_ttl_seconds: i64,
 }
 
 impl Default for AppConfig {
@@ -26,10 +24,12 @@ impl Default for AppConfig {
             cookie_domain: String::new(),
             database_url: String::new(),
             redis_host_name: "127.0.0.1".to_string(),
-            cors_allowed_origins: default_cors_origins(),
+            cors_allowed_origins: "http://127.0.0.1,http://localhost".to_string(),
             captcha_site_key: String::new(),
             captcha_secret_key: String::new(),
             postgres_password: String::new(),
+            token_ttl_seconds: 600,
+            refresh_token_ttl_seconds: 3600,
         }
     }
 }
@@ -80,4 +80,6 @@ lazy_static! {
     pub static ref CORS_ALLOWED_ORIGINS: String = get_config().cors_allowed_origins.clone();
     pub static ref CAPTCHA_SITE_KEY: String = get_config().captcha_site_key.clone();
     pub static ref CAPTCHA_SECRET_KEY: String = get_config().captcha_secret_key.clone();
+    pub static ref TOKEN_TTL_SECONDS: i64 = get_config().token_ttl_seconds;
+    pub static ref REFRESH_TOKEN_TTL_SECONDS: i64 = get_config().refresh_token_ttl_seconds;
 }

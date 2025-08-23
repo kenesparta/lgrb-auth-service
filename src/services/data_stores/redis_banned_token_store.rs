@@ -18,7 +18,7 @@ impl BannedTokenStore for RedisBannedTokenStore {
     async fn store_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
         Ok(redis::cmd("SETEX")
             .arg(&get_key(token))
-            .arg(TOKEN_TTL_SECONDS)
+            .arg(*TOKEN_TTL_SECONDS)
             .arg(true)
             .query_async::<_, ()>(&mut self.conn.clone())
             .await
