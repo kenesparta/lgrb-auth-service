@@ -4,7 +4,7 @@ use auth_service::services::MockEmailClient;
 use auth_service::services::data_stores::{
     PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore,
 };
-use auth_service::utils::{DATABASE_URL, REDIS_HOST_NAME, prod};
+use auth_service::utils::{DATABASE_URL, REDIS_HOST_NAME, init_tracing, prod};
 use auth_service::{Application, get_postgres_pool, get_redis_client};
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -14,6 +14,7 @@ use tonic_reflection::server::Builder as ReflectionBuilder;
 
 #[tokio::main]
 async fn main() {
+    init_tracing();
     let redis_client = configure_redis().await;
     let app_state = AppState::new(
         Arc::new(RwLock::new(PostgresUserStore::new(

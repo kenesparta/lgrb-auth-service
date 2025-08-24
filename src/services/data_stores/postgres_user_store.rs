@@ -21,6 +21,7 @@ impl PostgresUserStore {
 
 #[async_trait::async_trait]
 impl UserStore for PostgresUserStore {
+    #[tracing::instrument(name = "Adding user to PostgreSQL", skip_all)]
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         let password_hash = compute_password_hash(user.password().as_ref().to_string())
             .await
@@ -54,6 +55,7 @@ impl UserStore for PostgresUserStore {
         }
     }
 
+    #[tracing::instrument(name = "Retrieving user from PostgreSQL", skip_all)]
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         let result = sqlx::query!(
             r#"SELECT email, password_hash, requires_2fa FROM users WHERE email = $1"#,
@@ -73,6 +75,7 @@ impl UserStore for PostgresUserStore {
         }
     }
 
+    #[tracing::instrument(name = "Validating user credentials in PostgreSQL", skip_all)]
     async fn validate_user(
         &self,
         email: &Email,
@@ -97,6 +100,7 @@ impl UserStore for PostgresUserStore {
         }
     }
 
+    #[tracing::instrument(name = "Deleting user in PostgreSQL", skip_all)]
     async fn delete_account(&mut self, email: &Email) -> Result<(), UserStoreError> {
         let result = sqlx::query!(r#"DELETE FROM users WHERE email = $1"#, email.as_ref())
             .execute(&self.pool)
@@ -111,6 +115,7 @@ impl UserStore for PostgresUserStore {
     }
 }
 
+#[tracing::instrument(name = "Verify the password hash", skip_all)]
 async fn verify_password_hash(
     expected_password_hash: String,
     password_candidate: String,
@@ -125,6 +130,7 @@ async fn verify_password_hash(
     .await?
 }
 
+#[tracing::instrument(name = "Computing password hash", skip_all)]
 async fn compute_password_hash(password: String) -> Result<String, Box<dyn Error + Send + Sync>> {
     tokio::task::spawn_blocking(move || {
         let salt: SaltString = SaltString::generate(&mut OsRng);
