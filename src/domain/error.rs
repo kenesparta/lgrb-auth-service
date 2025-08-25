@@ -1,5 +1,6 @@
 use crate::domain::{EmailError, PasswordError, UserError};
 use crate::utils::GenerateTokenError;
+use color_eyre::Report;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AuthAPIError {
@@ -13,7 +14,7 @@ pub enum AuthAPIError {
     EmailOrPasswordIncorrect,
 
     #[error("Unexpected error")]
-    UnexpectedError,
+    UnexpectedError(#[source] Report),
 
     #[error("Error adding to banned tokens")]
     ErrorAddingToBannedTokens,

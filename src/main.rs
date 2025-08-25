@@ -14,6 +14,7 @@ use tonic_reflection::server::Builder as ReflectionBuilder;
 
 #[tokio::main]
 async fn main() {
+    color_eyre::install().expect("Failed to install color_eyre");
     init_tracing();
     let redis_client = configure_redis().await;
     let app_state = AppState::new(

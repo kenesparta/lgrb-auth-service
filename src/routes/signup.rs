@@ -5,6 +5,7 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use color_eyre::eyre::eyre;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -42,10 +43,10 @@ pub async fn signup(
         }
         Err(e) => match e {
             UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),
-            UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError),
+            UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError(eyre!("Unexpected user didn't find, error during signup"))),
             UserStoreError::IncorrectCredentials => Err(AuthAPIError::IncorrectCredentials),
-            UserStoreError::UnexpectedError => Err(AuthAPIError::UnexpectedError),
-        },
+            UserStoreError::UnexpectedError => Err(AuthAPIError::UnexpectedError(eyre!("Unexpected error during user creation"))),
+        }
     }
 }
 
