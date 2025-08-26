@@ -7,6 +7,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum_extra::extract::CookieJar;
+use color_eyre::eyre::eyre;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -55,9 +56,11 @@ pub async fn login(
         Err(e) => {
             return match e {
                 UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),
-                UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError),
+                UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError(eyre!(
+                    "User didn't find in store"
+                ))),
                 UserStoreError::IncorrectCredentials => Err(AuthAPIError::IncorrectCredentials),
-                UserStoreError::UnexpectedError => Err(AuthAPIError::UnexpectedError),
+                UserStoreError::UnexpectedError(e) => Err(AuthAPIError::UnexpectedError(e.into())),
             };
         }
     };
@@ -89,7 +92,11 @@ async fn handle_2fa(
         .await
     {
         Ok(_) => (),
-        Err(_) => return Err(AuthAPIError::UnexpectedError),
+        Err(_) => {
+            return Err(AuthAPIError::UnexpectedError(eyre!(
+                "Unexpected error in sending 2FA to email"
+            )));
+        }
     }
 
     match state
@@ -107,7 +114,9 @@ async fn handle_2fa(
                 login_attempt_id: login_attempt_id.id(),
             })),
         )),
-        Err(_) => Err(AuthAPIError::UnexpectedError),
+        Err(_) => Err(AuthAPIError::UnexpectedError(eyre!(
+            "Unexpected error adding 2FA code to store"
+        ))),
     }
 }
 

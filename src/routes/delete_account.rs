@@ -4,6 +4,7 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use color_eyre::eyre::eyre;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -25,7 +26,11 @@ pub async fn delete_account(
     let email = Email::new(request.email)?;
     match user_store.delete_account(&email).await {
         Ok(_) => {}
-        Err(_) => return Err(AuthAPIError::UnexpectedError),
+        Err(_) => {
+            return Err(AuthAPIError::UnexpectedError(eyre!(
+                "Unexpected error deleting an account"
+            )));
+        }
     }
 
     let response = Json(DeleteResponse {

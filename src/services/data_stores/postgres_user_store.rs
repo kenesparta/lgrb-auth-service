@@ -8,7 +8,6 @@ use argon2::{
 };
 use color_eyre::eyre::{Context, Result, eyre};
 use sqlx::PgPool;
-use std::error::Error;
 
 pub struct PostgresUserStore {
     pool: PgPool,
@@ -26,7 +25,7 @@ impl UserStore for PostgresUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         let password_hash = compute_password_hash(user.password().as_ref().to_string())
             .await
-            .map_err(|_| UserStoreError::UnexpectedError)?;
+            .map_err(|e| UserStoreError::UnexpectedError(e))?;
 
         let result = sqlx::query!(
             r#"INSERT INTO users (email, password_hash, requires_2fa) VALUES ($1, $2, $3)"#,
@@ -50,9 +49,9 @@ impl UserStore for PostgresUserStore {
                     return Err(UserStoreError::UserAlreadyExists);
                 }
 
-                Err(UserStoreError::UnexpectedError)
+                Err(UserStoreError::UnexpectedError(db_err.into()))
             }
-            Err(_) => Err(UserStoreError::UnexpectedError),
+            Err(e) => Err(UserStoreError::UnexpectedError(e.into())),
         }
     }
 
@@ -64,12 +63,12 @@ impl UserStore for PostgresUserStore {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|_| UserStoreError::UnexpectedError)?;
+        .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
 
         match result {
             Some(record) => {
                 let user = User::new(record.email, record.password_hash, record.requires_2fa)
-                    .map_err(|_| UserStoreError::UnexpectedError)?;
+                    .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
                 Ok(user)
             }
             None => Err(UserStoreError::UserNotFound),
@@ -88,7 +87,7 @@ impl UserStore for PostgresUserStore {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|_| UserStoreError::UnexpectedError)?;
+        .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
 
         match result {
             Some(record) => {
@@ -106,7 +105,7 @@ impl UserStore for PostgresUserStore {
         let result = sqlx::query!(r#"DELETE FROM users WHERE email = $1"#, email.as_ref())
             .execute(&self.pool)
             .await
-            .map_err(|_| UserStoreError::UnexpectedError)?;
+            .map_err(|e| UserStoreError::UnexpectedError(e.into()))?;
 
         if result.rows_affected() == 0 {
             Err(UserStoreError::UserNotFound)
@@ -129,7 +128,7 @@ async fn verify_password_hash(
 
             Argon2::default()
                 .verify_password(password_candidate.as_bytes(), &expected_password_hash)
-                .wrap_err("failed to verify password hash")
+                .wrap_err("failed to verify the password hash")
         })
     })
     .await;
@@ -152,6 +151,7 @@ async fn compute_password_hash(password: String) -> Result<String> {
             .hash_password(password.as_bytes(), &salt)?
             .to_string();
 
+            // Ok(password_hash)
             Err(eyre!("oh, no!"))
         })
     })

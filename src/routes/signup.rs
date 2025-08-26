@@ -43,10 +43,12 @@ pub async fn signup(
         }
         Err(e) => match e {
             UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),
-            UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError(eyre!("Unexpected user didn't find, error during signup"))),
+            UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError(eyre!(
+                "Unexpected user didn't find, error during signup"
+            ))),
             UserStoreError::IncorrectCredentials => Err(AuthAPIError::IncorrectCredentials),
-            UserStoreError::UnexpectedError => Err(AuthAPIError::UnexpectedError(eyre!("Unexpected error during user creation"))),
-        }
+            UserStoreError::UnexpectedError(e) => Err(AuthAPIError::UnexpectedError(e.into())),
+        },
     }
 }
 
@@ -83,10 +85,11 @@ mod tests {
     #[tokio::test]
     async fn signup_unexpected_error_on_get_user() {
         let mut mock_store = MockUserStore::new();
-        mock_store
-            .expect_add_user()
-            .times(1)
-            .returning(|_| Err(UserStoreError::UnexpectedError));
+        mock_store.expect_add_user().times(1).returning(|_| {
+            Err(UserStoreError::UnexpectedError(eyre!(
+                "Mock database error"
+            )))
+        });
 
         let state = create_app_state_with_mock(
             mock_store,
@@ -101,7 +104,7 @@ mod tests {
         };
 
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(result, Err(AuthAPIError::UnexpectedError)));
+        assert!(matches!(result, Err(AuthAPIError::UnexpectedError(_))));
     }
 
     #[tokio::test]
