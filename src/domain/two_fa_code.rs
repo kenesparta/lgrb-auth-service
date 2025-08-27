@@ -1,3 +1,4 @@
+use color_eyre::eyre::{Context, Report, Result, eyre};
 use rand::Rng;
 use std::fmt;
 
@@ -14,13 +15,13 @@ pub enum TwoFACodeError {
 }
 
 impl TwoFACode {
-    pub fn new(code: String) -> Result<Self, TwoFACodeError> {
+    pub fn new(code: String) -> Result<Self> {
         if code.len() != 6 {
-            return Err(TwoFACodeError::InvalidLength);
+            return Err(Report::from(TwoFACodeError::InvalidLength));
         }
 
         if !code.chars().all(|c| c.is_ascii_digit()) {
-            return Err(TwoFACodeError::InvalidFormat);
+            return Err(Report::from(TwoFACodeError::InvalidFormat));
         }
 
         Ok(TwoFACode(code))

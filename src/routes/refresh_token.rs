@@ -15,6 +15,7 @@ pub struct RefreshTokenResponse {
     pub refresh_token: String,
 }
 
+#[tracing::instrument(name = "RefreshToken", skip_all)]
 pub async fn refresh_token(jar: CookieJar) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     let refresh_cookie = jar
         .get(JWT_REFRESH_COOKIE_NAME)

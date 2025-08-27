@@ -17,6 +17,7 @@ pub struct DeleteResponse {
     pub message: String,
 }
 
+#[tracing::instrument(name = "DeleteAccount", skip_all)]
 pub async fn delete_account(
     State(state): State<AppState>,
     Json(request): Json<DeleteRequest>,
