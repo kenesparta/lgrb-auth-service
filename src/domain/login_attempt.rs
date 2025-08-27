@@ -1,3 +1,4 @@
+use color_eyre::eyre::{Context, Result};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -10,11 +11,9 @@ pub enum LoginAttemptIdError {
 }
 
 impl LoginAttemptId {
-    pub fn new(id: String) -> Result<Self, LoginAttemptIdError> {
-        match Uuid::parse_str(&id) {
-            Ok(_) => Ok(LoginAttemptId(id)),
-            Err(_) => Err(LoginAttemptIdError::InvalidFormat),
-        }
+    pub fn new(id: String) -> Result<Self> {
+        let parsed_id = Uuid::parse_str(&id).wrap_err("Invalid login attempt id")?;
+        Ok(LoginAttemptId(parsed_id.to_string()))
     }
 
     pub fn id(self) -> String {

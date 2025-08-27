@@ -33,6 +33,7 @@ pub struct TwoFactorAuthResponse {
     pub login_attempt_id: String,
 }
 
+#[tracing::instrument(name = "Login", skip_all)]
 pub async fn login(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -92,10 +93,8 @@ async fn handle_2fa(
         .await
     {
         Ok(_) => (),
-        Err(_) => {
-            return Err(AuthAPIError::UnexpectedError(eyre!(
-                "Unexpected error in sending 2FA to email"
-            )));
+        Err(e) => {
+            return Err(AuthAPIError::UnexpectedError(e.into()));
         }
     }
 
@@ -114,9 +113,7 @@ async fn handle_2fa(
                 login_attempt_id: login_attempt_id.id(),
             })),
         )),
-        Err(_) => Err(AuthAPIError::UnexpectedError(eyre!(
-            "Unexpected error adding 2FA code to store"
-        ))),
+        Err(e) => Err(AuthAPIError::UnexpectedError(e.into())),
     }
 }
 

@@ -1,15 +1,33 @@
 use crate::domain::Email;
 use crate::domain::login_attempt::LoginAttemptId;
 use crate::domain::two_fa_code::TwoFACode;
+use color_eyre::Report;
+use thiserror::Error;
 
 #[cfg(test)]
 use mockall::automock;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum TwoFACodeStoreError {
+    #[error("Login Attempt ID not found")]
     LoginAttemptIdNotFound,
-    UnexpectedError,
+
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+
+    #[error("User not found")]
     UserNotFound,
+}
+
+impl PartialEq for TwoFACodeStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::LoginAttemptIdNotFound, Self::LoginAttemptIdNotFound)
+                | (Self::UserNotFound, Self::UserNotFound)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }
 
 // This trait represents the interface all concrete 2FA code stores should implement
