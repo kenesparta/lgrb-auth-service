@@ -30,7 +30,7 @@ redis = { version = "0.25.2", features = ["tokio-comp"] }
 config = "0.15.4"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.19", features = ["registry", "env-filter"] }
-tracing-error = "0.2.0"
+tracing-error = "0.2.1"
 color-eyre = "0.6.5"
 
 

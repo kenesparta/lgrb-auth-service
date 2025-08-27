@@ -6,7 +6,7 @@ use argon2::{
     Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version,
     password_hash::SaltString, password_hash::rand_core::OsRng,
 };
-use color_eyre::eyre::{Context, Result, eyre};
+use color_eyre::eyre::{Context, Result};
 use sqlx::PgPool;
 
 pub struct PostgresUserStore {
@@ -151,8 +151,7 @@ async fn compute_password_hash(password: String) -> Result<String> {
             .hash_password(password.as_bytes(), &salt)?
             .to_string();
 
-            // Ok(password_hash)
-            Err(eyre!("oh, no!"))
+            Ok(password_hash)
         })
     })
     .await;

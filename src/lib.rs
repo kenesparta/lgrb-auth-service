@@ -38,6 +38,7 @@ pub struct ErrorResponse {
 
 impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
+        log_error_chain(&self);
         let (status, error_message) = match self {
             AuthAPIError::IncorrectCredentials => {
                 (StatusCode::UNAUTHORIZED, "Incorrect credentials")
@@ -129,4 +130,22 @@ pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
 pub fn get_redis_client(redis_hostname: String) -> redis::RedisResult<redis::Client> {
     let redis_url = format!("redis://{}/", redis_hostname);
     redis::Client::open(redis_url)
+}
+
+/// The `log_error_chain` function constructs a detailed, formatted string that represents the full
+/// chain of errors, from the root error to its ultimate cause. It then logs this detailed error
+/// chain using the tracing crate’s error! macro, providing comprehensive error
+/// context for debugging.
+fn log_error_chain(e: &(dyn Error + 'static)) {
+    let separator =
+        "\n-----------------------------------------------------------------------------------\n";
+    let mut report = format!("{}{:?}\n", separator, e);
+    let mut current = e.source();
+    while let Some(cause) = current {
+        let str = format!("Caused by:\n\n{:?}", cause);
+        report = format!("{}\n{}", report, str);
+        current = cause.source();
+    }
+    report = format!("{}\n{}", report, separator);
+    tracing::error!("{}", report);
 }
