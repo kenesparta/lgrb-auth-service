@@ -1,5 +1,6 @@
 use config::{Config, ConfigError, Environment, File};
 use lazy_static::lazy_static;
+use secrecy::SecretBox;
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
 
@@ -45,9 +46,7 @@ impl AppConfig {
         let app_config: AppConfig = config.try_deserialize()?;
 
         if app_config.jwt_secret.is_empty() {
-            return Err(ConfigError::Message(
-                "JWT_SECRET must be set and not empty".to_string(),
-            ));
+            return Err(ConfigError::Message("JWT_SECRET must be set and not empty".to_string()));
         }
 
         if app_config.cookie_domain.is_empty() {
@@ -73,9 +72,9 @@ pub fn get_config() -> &'static AppConfig {
 }
 
 lazy_static! {
-    pub static ref JWT_SECRET: String = get_config().jwt_secret.clone();
+    pub static ref JWT_SECRET: SecretBox<String> = SecretBox::new(Box::from(get_config().jwt_secret.clone()));
     pub static ref COOKIE_DOMAIN: String = get_config().cookie_domain.clone();
-    pub static ref DATABASE_URL: String = get_config().database_url.clone();
+    pub static ref DATABASE_URL: SecretBox<String> = SecretBox::new(Box::from(get_config().database_url.clone()));
     pub static ref REDIS_HOST_NAME: String = get_config().redis_host_name.clone();
     pub static ref CORS_ALLOWED_ORIGINS: String = get_config().cors_allowed_origins.clone();
     pub static ref CAPTCHA_SITE_KEY: String = get_config().captcha_site_key.clone();

@@ -1,12 +1,10 @@
 use super::constants::JWT_COOKIE_NAME;
 use crate::domain::Email;
-use crate::utils::{
-    COOKIE_DOMAIN, JWT_REFRESH_COOKIE_NAME, JWT_SECRET, REFRESH_TOKEN_TTL_SECONDS,
-    TOKEN_TTL_SECONDS,
-};
+use crate::utils::{COOKIE_DOMAIN, JWT_REFRESH_COOKIE_NAME, JWT_SECRET, REFRESH_TOKEN_TTL_SECONDS, TOKEN_TTL_SECONDS};
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Validation, decode, encode};
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 
 // Create a cookie with a new JWT auth token
@@ -46,7 +44,7 @@ pub enum GenerateTokenError {
 pub async fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &DecodingKey::from_secret(JWT_SECRET.expose_secret().as_bytes()),
         &Validation::default(),
     )
     .map(|data| data.claims)
@@ -57,7 +55,7 @@ fn create_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> 
     encode(
         &jsonwebtoken::Header::default(),
         &claims,
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &EncodingKey::from_secret(JWT_SECRET.expose_secret().as_bytes()),
     )
 }
 
@@ -75,30 +73,26 @@ pub struct TokenPair {
 }
 
 pub fn generate_token_pair(email: &Email) -> Result<TokenPair, GenerateTokenError> {
-    let delta = chrono::Duration::try_seconds(*TOKEN_TTL_SECONDS)
-        .ok_or(GenerateTokenError::UnexpectedError)?;
+    let delta = chrono::Duration::try_seconds(*TOKEN_TTL_SECONDS).ok_or(GenerateTokenError::UnexpectedError)?;
     let access_exp = Utc::now()
         .checked_add_signed(delta)
         .ok_or(GenerateTokenError::UnexpectedError)?
         .timestamp();
 
-    let delta = chrono::Duration::try_seconds(*REFRESH_TOKEN_TTL_SECONDS)
-        .ok_or(GenerateTokenError::UnexpectedError)?;
+    let delta = chrono::Duration::try_seconds(*REFRESH_TOKEN_TTL_SECONDS).ok_or(GenerateTokenError::UnexpectedError)?;
     let refresh_exp = Utc::now()
         .checked_add_signed(delta)
         .ok_or(GenerateTokenError::UnexpectedError)?
         .timestamp();
 
     let access_claims = Claims {
-        sub: email.as_ref().to_string(),
-        exp: access_exp
-            .try_into()
-            .map_err(|_| GenerateTokenError::UnexpectedError)?,
+        sub: email.as_ref().expose_secret().to_string(),
+        exp: access_exp.try_into().map_err(|_| GenerateTokenError::UnexpectedError)?,
         token_type: "access".to_string(),
     };
 
     let refresh_claims = Claims {
-        sub: email.as_ref().to_string(),
+        sub: email.as_ref().expose_secret().to_string(),
         exp: refresh_exp
             .try_into()
             .map_err(|_| GenerateTokenError::UnexpectedError)?,
@@ -116,11 +110,12 @@ mod tests {
     use super::*;
     use fake::Fake;
     use fake::faker::internet::en::SafeEmail;
+    use secrecy::SecretBox;
 
     #[tokio::test]
     async fn test_generate_auth_cookie() {
         let fake_email: String = SafeEmail().fake();
-        let email = Email::new(fake_email.to_owned()).unwrap();
+        let email = Email::new(SecretBox::new(Box::from(fake_email.to_owned()))).unwrap();
         let cookie = generate_auth_cookie(&email).unwrap();
         assert_eq!(cookie.name(), JWT_COOKIE_NAME);
         assert_eq!(cookie.value().split('.').count(), 3);
@@ -138,7 +133,7 @@ mod tests {
     #[tokio::test]
     async fn test_generate_token_pair_success() {
         let fake_email: String = SafeEmail().fake();
-        let email = Email::new(fake_email.clone()).unwrap();
+        let email = Email::new(SecretBox::new(Box::from(fake_email.clone()))).unwrap();
 
         let result = generate_token_pair(&email);
 
@@ -155,7 +150,7 @@ mod tests {
     #[tokio::test]
     async fn test_generate_token_pair_tokens_are_valid() {
         let fake_email: String = SafeEmail().fake();
-        let email = Email::new(fake_email.clone()).unwrap();
+        let email = Email::new(SecretBox::new(Box::from(fake_email.clone()))).unwrap();
 
         let token_pair = generate_token_pair(&email).unwrap();
 
@@ -171,7 +166,7 @@ mod tests {
     #[tokio::test]
     async fn test_generate_token_pair_expiration_times() {
         let fake_email: String = SafeEmail().fake();
-        let email = Email::new(fake_email).unwrap();
+        let email = Email::new(SecretBox::new(Box::from(fake_email))).unwrap();
 
         let before_generation = Utc::now();
         let token_pair = generate_token_pair(&email).unwrap();
@@ -181,23 +176,17 @@ mod tests {
         let refresh_claims = validate_token(&token_pair.refresh_token).await.unwrap();
 
         let delta = chrono::Duration::try_seconds(*TOKEN_TTL_SECONDS).unwrap();
-        let expected_access_min =
-            before_generation + delta - chrono::Duration::try_seconds(1).unwrap();
-        let expected_access_max =
-            after_generation + delta + chrono::Duration::try_seconds(1).unwrap();
-        let access_exp_time =
-            chrono::DateTime::from_timestamp(access_claims.exp as i64, 0).unwrap();
+        let expected_access_min = before_generation + delta - chrono::Duration::try_seconds(1).unwrap();
+        let expected_access_max = after_generation + delta + chrono::Duration::try_seconds(1).unwrap();
+        let access_exp_time = chrono::DateTime::from_timestamp(access_claims.exp as i64, 0).unwrap();
 
         assert!(access_exp_time >= expected_access_min);
         assert!(access_exp_time <= expected_access_max);
 
         let delta = chrono::Duration::try_seconds(*REFRESH_TOKEN_TTL_SECONDS).unwrap();
-        let expected_refresh_min =
-            before_generation + delta - chrono::Duration::try_seconds(1).unwrap();
-        let expected_refresh_max =
-            after_generation + delta + chrono::Duration::try_seconds(1).unwrap();
-        let refresh_exp_time =
-            chrono::DateTime::from_timestamp(refresh_claims.exp as i64, 0).unwrap();
+        let expected_refresh_min = before_generation + delta - chrono::Duration::try_seconds(1).unwrap();
+        let expected_refresh_max = after_generation + delta + chrono::Duration::try_seconds(1).unwrap();
+        let refresh_exp_time = chrono::DateTime::from_timestamp(refresh_claims.exp as i64, 0).unwrap();
 
         assert!(refresh_exp_time >= expected_refresh_min);
         assert!(refresh_exp_time <= expected_refresh_max);
@@ -209,8 +198,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_token_pair_different_emails_produce_different_tokens() {
-        let email1 = Email::new("user1@example.com".to_string()).unwrap();
-        let email2 = Email::new("user2@example.com".to_string()).unwrap();
+        let email1 = Email::new(SecretBox::new(Box::from("user1@example.com".to_string()))).unwrap();
+        let email2 = Email::new(SecretBox::new(Box::from("user2@example.com".to_string()))).unwrap();
 
         let token_pair1 = generate_token_pair(&email1).unwrap();
         let token_pair2 = generate_token_pair(&email2).unwrap();
@@ -228,7 +217,7 @@ mod tests {
     #[tokio::test]
     async fn test_generate_token_pair_multiple_calls_produce_different_tokens() {
         let fake_email: String = SafeEmail().fake();
-        let email = Email::new(fake_email).unwrap();
+        let email = Email::new(SecretBox::new(Box::from(fake_email))).unwrap();
 
         let token_pair1 = generate_token_pair(&email).unwrap();
         tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
@@ -245,23 +234,13 @@ mod tests {
         let fake_email3: String = SafeEmail().fake();
         let fake_email4: String = SafeEmail().fake();
         let fake_email5: String = SafeEmail().fake();
-        let test_emails = vec![
-            fake_email1,
-            fake_email2,
-            fake_email3,
-            fake_email4,
-            fake_email5,
-        ];
+        let test_emails = vec![fake_email1, fake_email2, fake_email3, fake_email4, fake_email5];
 
         for email_str in test_emails {
-            let email = Email::new(email_str.to_string()).unwrap();
+            let email = Email::new(SecretBox::new(Box::from(email_str.to_string()))).unwrap();
             let result = generate_token_pair(&email);
 
-            assert!(
-                result.is_ok(),
-                "Failed to generate token pair for email: {}",
-                email_str
-            );
+            assert!(result.is_ok(), "Failed to generate token pair for email: {}", email_str);
 
             let token_pair = result.unwrap();
             let claims = validate_token(&token_pair.access_token).await.unwrap();
@@ -272,7 +251,7 @@ mod tests {
     #[tokio::test]
     async fn test_token_pair_structure() {
         let fake_email: String = SafeEmail().fake();
-        let email = Email::new(fake_email.clone()).unwrap();
+        let email = Email::new(SecretBox::new(Box::from(fake_email.clone()))).unwrap();
 
         let token_pair = generate_token_pair(&email).unwrap();
 

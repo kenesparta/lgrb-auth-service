@@ -6,18 +6,15 @@ pub mod services;
 pub mod utils;
 
 use crate::domain::AuthAPIError;
-use crate::routes::{
-    delete_account, health_check, login, logout, refresh_token, signup, verify_2fa,
-};
-use crate::utils::{
-    CORS_ALLOWED_ORIGINS, PGSQL_MAX_CONNECTIONS, make_span_with_request_id, on_request, on_response,
-};
+use crate::routes::{delete_account, health_check, login, logout, refresh_token, signup, verify_2fa};
+use crate::utils::{CORS_ALLOWED_ORIGINS, PGSQL_MAX_CONNECTIONS, make_span_with_request_id, on_request, on_response};
 use app_state::AppState;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::serve::Serve;
 use axum::{Json, Router};
+use secrecy::{ExposeSecret, SecretBox};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
@@ -40,29 +37,17 @@ impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
         log_error_chain(&self);
         let (status, error_message) = match self {
-            AuthAPIError::IncorrectCredentials => {
-                (StatusCode::UNAUTHORIZED, "Incorrect credentials")
-            }
-            AuthAPIError::UnexpectedError(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
-            }
+            AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Incorrect credentials"),
+            AuthAPIError::UnexpectedError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
-            AuthAPIError::EmailOrPasswordIncorrect => {
-                (StatusCode::BAD_REQUEST, "Email or password incorrect")
-            }
+            AuthAPIError::EmailOrPasswordIncorrect => (StatusCode::BAD_REQUEST, "Email or password incorrect"),
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing JWT token"),
             AuthAPIError::TokenNotValid => (StatusCode::UNAUTHORIZED, "JWT token not valid"),
-            AuthAPIError::ErrorAddingToBannedTokens => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Error adding to banned tokens",
-            ),
-            AuthAPIError::TwoFAMalformedError => (
-                StatusCode::BAD_REQUEST,
-                "Error two-factor authentication malformed",
-            ),
-            AuthAPIError::LoginAttemptIdMalformedError => {
-                (StatusCode::BAD_REQUEST, "Error login attempt id malformed")
+            AuthAPIError::ErrorAddingToBannedTokens => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Error adding to banned tokens")
             }
+            AuthAPIError::TwoFAMalformedError => (StatusCode::BAD_REQUEST, "Error two-factor authentication malformed"),
+            AuthAPIError::LoginAttemptIdMalformedError => (StatusCode::BAD_REQUEST, "Error login attempt id malformed"),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error"),
         };
 
@@ -75,7 +60,10 @@ impl IntoResponse for AuthAPIError {
 }
 
 impl Application {
-    pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn build(
+        app_state: AppState,
+        address: &str,
+    ) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/health-check", get(health_check))
@@ -109,10 +97,7 @@ impl Application {
 
 fn cors() -> Result<CorsLayer, Box<dyn Error>> {
     let allowed_origins = &CORS_ALLOWED_ORIGINS;
-    let origins: Result<Vec<_>, _> = allowed_origins
-        .split(',')
-        .map(|origin| origin.trim().parse())
-        .collect();
+    let origins: Result<Vec<_>, _> = allowed_origins.split(',').map(|origin| origin.trim().parse()).collect();
 
     Ok(CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::PUT])
@@ -120,10 +105,10 @@ fn cors() -> Result<CorsLayer, Box<dyn Error>> {
         .allow_origin(origins?))
 }
 
-pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+pub async fn get_postgres_pool(url: &SecretBox<String>) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
         .max_connections(PGSQL_MAX_CONNECTIONS)
-        .connect(url)
+        .connect(url.expose_secret())
         .await
 }
 
@@ -137,8 +122,7 @@ pub fn get_redis_client(redis_hostname: String) -> redis::RedisResult<redis::Cli
 /// chain using the tracing crate’s error! macro, providing comprehensive error
 /// context for debugging.
 fn log_error_chain(e: &(dyn Error + 'static)) {
-    let separator =
-        "\n-----------------------------------------------------------------------------------\n";
+    let separator = "\n-----------------------------------------------------------------------------------\n";
     let mut report = format!("{}{:?}\n", separator, e);
     let mut current = e.source();
     while let Some(cause) = current {

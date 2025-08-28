@@ -5,6 +5,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use color_eyre::eyre::eyre;
+use secrecy::SecretBox;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -24,7 +25,7 @@ pub async fn delete_account(
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let mut user_store = state.user_store.write().await;
 
-    let email = Email::new(request.email)?;
+    let email = Email::new(SecretBox::new(Box::from(request.email)))?;
     match user_store.delete_account(&email).await {
         Ok(_) => {}
         Err(_) => {

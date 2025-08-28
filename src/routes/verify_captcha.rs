@@ -27,8 +27,8 @@ pub struct CaptchaService {
 
 impl CaptchaService {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let secret_key = env::var("CAPTCHA_SECRET_KEY")
-            .map_err(|_| "CAPTCHA_SECRET_KEY environment variable is required")?;
+        let secret_key =
+            env::var("CAPTCHA_SECRET_KEY").map_err(|_| "CAPTCHA_SECRET_KEY environment variable is required")?;
 
         Ok(Self {
             client: Client::new(),

@@ -8,12 +8,13 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum_extra::extract::CookieJar;
 use color_eyre::eyre::eyre;
+use secrecy::{ExposeSecret, SecretBox};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
     pub email: String,
-    pub password: String,
+    pub password: SecretBox<String>,
 }
 
 // The login route can return 2 possible success responses.
@@ -40,12 +41,12 @@ pub async fn login(
     Json(request): Json<LoginRequest>,
 ) -> Result<(StatusCode, CookieJar, impl IntoResponse), AuthAPIError> {
     // TODO: move this validation other part of the code
-    if request.email.is_empty() || request.password.len() < 8 || !request.email.contains('@') {
+    if request.email.is_empty() || request.password.expose_secret().len() < 8 || !request.email.contains('@') {
         return Err(AuthAPIError::EmailOrPasswordIncorrect);
     }
 
     let store = &state.user_store.read().await;
-    let email = &Email::new(request.email)?;
+    let email = &Email::new(SecretBox::new(Box::from(request.email)))?;
     let password = &Password::new(request.password)?;
     match store.validate_user(email, password).await {
         Ok(_) => (),
@@ -57,9 +58,7 @@ pub async fn login(
         Err(e) => {
             return match e {
                 UserStoreError::UserAlreadyExists => Err(AuthAPIError::UserAlreadyExists),
-                UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError(eyre!(
-                    "User didn't find in store"
-                ))),
+                UserStoreError::UserNotFound => Err(AuthAPIError::UnexpectedError(eyre!("User didn't find in store"))),
                 UserStoreError::IncorrectCredentials => Err(AuthAPIError::IncorrectCredentials),
                 UserStoreError::UnexpectedError(e) => Err(AuthAPIError::UnexpectedError(e.into())),
             };
@@ -110,7 +109,7 @@ async fn handle_2fa(
             jar,
             Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
                 message: "2FA required".to_string(),
-                login_attempt_id: login_attempt_id.id(),
+                login_attempt_id: login_attempt_id.id().expose_secret().clone(),
             })),
         )),
         Err(e) => Err(AuthAPIError::UnexpectedError(e.into())),

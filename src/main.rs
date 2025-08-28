@@ -1,9 +1,7 @@
 use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
 use auth_service::services::MockEmailClient;
-use auth_service::services::data_stores::{
-    PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore,
-};
+use auth_service::services::data_stores::{PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore};
 use auth_service::utils::{DATABASE_URL, REDIS_HOST_NAME, init_tracing, prod};
 use auth_service::{Application, get_postgres_pool, get_redis_client};
 use sqlx::PgPool;
@@ -18,12 +16,8 @@ async fn main() {
     init_tracing().expect("Failed to initialize tracing");
     let redis_client = configure_redis().await;
     let app_state = AppState::new(
-        Arc::new(RwLock::new(PostgresUserStore::new(
-            configure_postgresql().await,
-        ))),
-        Arc::new(RwLock::new(RedisBannedTokenStore::new(
-            redis_client.clone(),
-        ))),
+        Arc::new(RwLock::new(PostgresUserStore::new(configure_postgresql().await))),
+        Arc::new(RwLock::new(RedisBannedTokenStore::new(redis_client.clone()))),
         Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_client))),
         Arc::new(RwLock::new(MockEmailClient::new())),
     );
@@ -64,17 +58,13 @@ async fn configure_postgresql() -> PgPool {
         .await
         .expect("Failed to create a Postgres connection pool!");
 
-    sqlx::migrate!()
-        .run(&pg_pool)
-        .await
-        .expect("Failed to run migrations");
+    sqlx::migrate!().run(&pg_pool).await.expect("Failed to run migrations");
 
     pg_pool
 }
 
 async fn configure_redis() -> redis::aio::MultiplexedConnection {
-    let client =
-        get_redis_client(REDIS_HOST_NAME.to_owned()).expect("Failed to get a Redis client");
+    let client = get_redis_client(REDIS_HOST_NAME.to_owned()).expect("Failed to get a Redis client");
 
     client
         .get_multiplexed_async_connection()
