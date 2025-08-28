@@ -148,7 +148,7 @@ async fn should_return_401_if_old_code() {
     let case = &serde_json::json!({
         "email": fake_email,
         "loginAttemptId": two_fa_store.clone().0.id().expose_secret(),
-        "2FACode": two_fa_store.clone().1.code(),
+        "2FACode": two_fa_store.clone().1.code().expose_secret(),
     });
     let response_2fa = app.post_verify_2fa(case);
     assert_eq!(response_2fa.await.status().as_u16(), StatusCode::UNAUTHORIZED);
@@ -188,7 +188,7 @@ async fn should_return_200_if_correct_code() {
     let case = &serde_json::json!({
         "email": fake_email,
         "loginAttemptId": two_fa_store.clone().0.id().expose_secret(),
-        "2FACode": two_fa_store.clone().1.code(),
+        "2FACode": two_fa_store.clone().1.code().expose_secret(),
     });
     let response_2fa = app.post_verify_2fa(case).await;
     assert_eq!(response_2fa.status().as_u16(), StatusCode::OK);
@@ -234,7 +234,7 @@ async fn should_return_401_if_same_code_twice() {
     let case = &serde_json::json!({
         "email": fake_email,
         "loginAttemptId": two_fa_store.clone().0.id().expose_secret(),
-        "2FACode": two_fa_store.clone().1.code(),
+        "2FACode": two_fa_store.clone().1.code().expose_secret(),
     });
     let response_2fa = app.post_verify_2fa(case).await;
     assert_eq!(response_2fa.status().as_u16(), StatusCode::OK);
@@ -242,7 +242,7 @@ async fn should_return_401_if_same_code_twice() {
     let case = &serde_json::json!({
         "email": fake_email,
         "loginAttemptId": two_fa_store.clone().0.id().expose_secret(),
-        "2FACode": two_fa_store.clone().1.code(),
+        "2FACode": two_fa_store.clone().1.code().expose_secret(),
     });
     let response_2fa = app.post_verify_2fa(case).await;
     assert_eq!(response_2fa.status().as_u16(), StatusCode::UNAUTHORIZED);

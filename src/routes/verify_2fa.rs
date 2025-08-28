@@ -39,7 +39,7 @@ pub async fn verify_2fa(
                 return Err(AuthAPIError::IncorrectCredentials);
             }
 
-            if stored_two_fa_code.clone().code() != two_fa_code {
+            if stored_two_fa_code.clone().code().expose_secret() != two_fa_code {
                 return Err(AuthAPIError::IncorrectCredentials);
             }
         }

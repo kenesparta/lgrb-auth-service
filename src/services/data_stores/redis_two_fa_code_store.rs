@@ -31,7 +31,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
     ) -> Result<(), TwoFACodeStoreError> {
         let two_fa = serde_json::to_string(&TwoFATuple(
             login_attempt_id.as_ref().expose_secret().to_string(),
-            code.as_ref().to_string(),
+            code.as_ref().expose_secret().to_string(),
         ))
         .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
@@ -75,8 +75,8 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
                 let login_attempt_id = LoginAttemptId::new(SecretBox::new(Box::from(two_fa_tuple.0)))
                     .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
-                let two_fa_code =
-                    TwoFACode::new(two_fa_tuple.1).map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
+                let two_fa_code = TwoFACode::new(SecretBox::new(Box::from(two_fa_tuple.1)))
+                    .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
                 Ok((login_attempt_id, two_fa_code))
             }

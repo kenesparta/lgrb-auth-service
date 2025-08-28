@@ -1,9 +1,10 @@
 use color_eyre::eyre::{Report, Result};
 use rand::Rng;
+use secrecy::{ExposeSecret, SecretBox};
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct TwoFACode(String);
+#[derive(Debug)]
+pub struct TwoFACode(SecretBox<String>);
 
 #[derive(Debug, thiserror::Error)]
 pub enum TwoFACodeError {
@@ -15,19 +16,19 @@ pub enum TwoFACodeError {
 }
 
 impl TwoFACode {
-    pub fn new(code: String) -> Result<Self> {
-        if code.len() != 6 {
+    pub fn new(code: SecretBox<String>) -> Result<Self> {
+        if code.expose_secret().len() != 6 {
             return Err(Report::from(TwoFACodeError::InvalidLength));
         }
 
-        if !code.chars().all(|c| c.is_ascii_digit()) {
+        if !code.expose_secret().chars().all(|c| c.is_ascii_digit()) {
             return Err(Report::from(TwoFACodeError::InvalidFormat));
         }
 
         Ok(TwoFACode(code))
     }
 
-    pub fn code(self) -> String {
+    pub fn code(self) -> SecretBox<String> {
         self.0
     }
 }
@@ -37,12 +38,27 @@ impl Default for TwoFACode {
         let mut rng = rand::rng();
         let code = (0..6).map(|_| rng.random_range(0..10).to_string()).collect::<String>();
 
-        TwoFACode(code)
+        TwoFACode(SecretBox::new(Box::from(code)))
     }
 }
 
-impl AsRef<str> for TwoFACode {
-    fn as_ref(&self) -> &str {
+impl PartialEq for TwoFACode {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+impl Clone for TwoFACode {
+    fn clone(&self) -> Self {
+        Self(SecretBox::new(Box::from(self.0.expose_secret().clone())))
+    }
+}
+
+impl AsRef<SecretBox<String>> for TwoFACode {
+    fn as_ref(&self) -> &SecretBox<String> {
         &self.0
     }
 }
@@ -52,6 +68,6 @@ impl fmt::Display for TwoFACode {
         &self,
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.0.expose_secret())
     }
 }
