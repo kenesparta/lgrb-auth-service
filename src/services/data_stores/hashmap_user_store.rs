@@ -10,7 +10,10 @@ pub struct HashmapUserStore {
 
 #[async_trait::async_trait]
 impl UserStore for HashmapUserStore {
-    async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
+    async fn add_user(
+        &mut self,
+        user: User,
+    ) -> Result<(), UserStoreError> {
         match self.users.entry(user.email().to_owned()) {
             Entry::Occupied(_) => Err(UserStoreError::UserAlreadyExists),
             Entry::Vacant(entry) => {
@@ -20,11 +23,11 @@ impl UserStore for HashmapUserStore {
         }
     }
 
-    async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
-        self.users
-            .get(email)
-            .ok_or(UserStoreError::UserNotFound)
-            .cloned()
+    async fn get_user(
+        &self,
+        email: &Email,
+    ) -> Result<User, UserStoreError> {
+        self.users.get(email).ok_or(UserStoreError::UserNotFound).cloned()
     }
 
     async fn validate_user(
@@ -40,7 +43,10 @@ impl UserStore for HashmapUserStore {
         Ok(())
     }
 
-    async fn delete_account(&mut self, email: &Email) -> Result<(), UserStoreError> {
+    async fn delete_account(
+        &mut self,
+        email: &Email,
+    ) -> Result<(), UserStoreError> {
         self.users.remove(email);
         Ok(())
     }
@@ -51,6 +57,7 @@ mod tests {
     use super::*;
     use fake::Fake;
     use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
+    use secrecy::SecretBox;
 
     #[tokio::test]
     async fn test_user_add() {
@@ -98,12 +105,12 @@ mod tests {
         assert!(result_3.is_ok());
 
         let user_found = hash_map_user
-            .get_user(&Email::new(user_02_shared).unwrap())
+            .get_user(&Email::new(SecretBox::new(Box::from(user_02_shared))).unwrap())
             .await;
         assert_eq!(user_found, Ok(user_02));
 
         let user_not_found = hash_map_user
-            .get_user(&Email::new(SafeEmail().fake()).unwrap())
+            .get_user(&Email::new(SecretBox::new(SafeEmail().fake())).unwrap())
             .await;
         assert_eq!(user_not_found, Err(UserStoreError::UserNotFound));
     }
@@ -114,36 +121,31 @@ mod tests {
 
         let user_01_email_shared: String = SafeEmail().fake();
         let user_01_password_shared: String = FakePassword(8..20).fake();
-        let user_01 = User::new(
-            user_01_email_shared.clone(),
-            user_01_password_shared.clone(),
-            true,
-        )
-        .unwrap();
+        let user_01 = User::new(user_01_email_shared.clone(), user_01_password_shared.clone(), true).unwrap();
 
         let result_1 = hash_map_user.add_user(user_01).await;
         assert!(result_1.is_ok());
 
         let validation_failed = hash_map_user
             .validate_user(
-                &Email::new(SafeEmail().fake()).unwrap(),
-                &Password::new(FakePassword(8..20).fake()).unwrap(),
+                &Email::new(SecretBox::new(SafeEmail().fake())).unwrap(),
+                &Password::new(SecretBox::new(FakePassword(8..20).fake())).unwrap(),
             )
             .await;
         assert_eq!(validation_failed, Err(UserStoreError::UserNotFound));
 
         let validation_failed = hash_map_user
             .validate_user(
-                &Email::new(user_01_email_shared.clone()).unwrap(),
-                &Password::new(FakePassword(8..20).fake()).unwrap(),
+                &Email::new(SecretBox::new(Box::from(user_01_email_shared.clone()))).unwrap(),
+                &Password::new(SecretBox::new(FakePassword(8..20).fake())).unwrap(),
             )
             .await;
         assert_eq!(validation_failed, Err(UserStoreError::IncorrectCredentials));
 
         let validation_ok = hash_map_user
             .validate_user(
-                &Email::new(user_01_email_shared).unwrap(),
-                &Password::new(user_01_password_shared).unwrap(),
+                &Email::new(SecretBox::new(Box::from(user_01_email_shared))).unwrap(),
+                &Password::new(SecretBox::new(Box::from(user_01_password_shared))).unwrap(),
             )
             .await;
         assert!(validation_ok.is_ok());
@@ -160,7 +162,7 @@ mod tests {
         assert!(result_1.is_ok());
 
         let result_2 = hash_map_user
-            .delete_account(&Email::new(user_email).unwrap())
+            .delete_account(&Email::new(SecretBox::new(Box::from(user_email))).unwrap())
             .await;
         assert!(result_2.is_ok());
     }

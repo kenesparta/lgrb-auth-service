@@ -1,5 +1,6 @@
 use crate::domain::Email;
 use crate::domain::client::{EmailClient, EmailClientError};
+use secrecy::ExposeSecret;
 
 pub struct MockEmailClient;
 
@@ -19,7 +20,7 @@ impl EmailClient for MockEmailClient {
     ) -> Result<(), EmailClientError> {
         println!(
             "Sending email to {} with subject: {} and content: {}",
-            recipient.as_ref(),
+            recipient.as_ref().expose_secret(),
             subject,
             content
         );
