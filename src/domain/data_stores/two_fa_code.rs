@@ -20,7 +20,10 @@ pub enum TwoFACodeStoreError {
 }
 
 impl PartialEq for TwoFACodeStoreError {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
         matches!(
             (self, other),
             (Self::LoginAttemptIdNotFound, Self::LoginAttemptIdNotFound)
@@ -40,7 +43,10 @@ pub trait TwoFACodeStore: Send + Sync {
         login_attempt_id: LoginAttemptId,
         code: TwoFACode,
     ) -> Result<(), TwoFACodeStoreError>;
-    async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError>;
+    async fn remove_code(
+        &mut self,
+        email: &Email,
+    ) -> Result<(), TwoFACodeStoreError>;
     async fn get_code(
         &self,
         email: &Email,

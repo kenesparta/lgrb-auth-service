@@ -1,4 +1,4 @@
-use color_eyre::eyre::{Context, Report, Result, eyre};
+use color_eyre::eyre::{Report, Result};
 use rand::Rng;
 use std::fmt;
 
@@ -35,9 +35,7 @@ impl TwoFACode {
 impl Default for TwoFACode {
     fn default() -> Self {
         let mut rng = rand::rng();
-        let code = (0..6)
-            .map(|_| rng.random_range(0..10).to_string())
-            .collect::<String>();
+        let code = (0..6).map(|_| rng.random_range(0..10).to_string()).collect::<String>();
 
         TwoFACode(code)
     }
@@ -50,7 +48,10 @@ impl AsRef<str> for TwoFACode {
 }
 
 impl fmt::Display for TwoFACode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }

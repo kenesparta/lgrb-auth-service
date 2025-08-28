@@ -1,7 +1,9 @@
+use secrecy::{ExposeSecret, SecretBox};
+use std::hash::{Hash, Hasher};
 use validator::ValidateEmail;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Email(String);
+#[derive(Debug)]
+pub struct Email(SecretBox<String>);
 
 #[derive(Debug, thiserror::Error)]
 pub enum EmailError {
@@ -10,17 +12,43 @@ pub enum EmailError {
 }
 
 impl Email {
-    pub fn new(email: String) -> Result<Self, EmailError> {
-        if !ValidateEmail::validate_email(&email) {
+    pub fn new(email: SecretBox<String>) -> Result<Self, EmailError> {
+        if !ValidateEmail::validate_email(&email.expose_secret()) {
             return Err(EmailError::InvalidFormat);
         }
 
-        Ok(Self(email.to_string()))
+        Ok(Self(email))
     }
 }
 
-impl AsRef<str> for Email {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
+impl Clone for Email {
+    fn clone(&self) -> Self {
+        Self(SecretBox::new(Box::new(self.0.expose_secret().clone())))
+    }
+}
+
+impl PartialEq for Email {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+impl Eq for Email {}
+
+impl Hash for Email {
+    fn hash<H: Hasher>(
+        &self,
+        state: &mut H,
+    ) {
+        self.0.expose_secret().hash(state);
+    }
+}
+
+impl AsRef<SecretBox<String>> for Email {
+    fn as_ref(&self) -> &SecretBox<String> {
+        &self.0
     }
 }
