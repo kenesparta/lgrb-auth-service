@@ -9,14 +9,20 @@ pub struct HashsetBannedTokenStore {
 
 #[async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
-    async fn store_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
+    async fn store_token(
+        &mut self,
+        token: &str,
+    ) -> Result<(), BannedTokenStoreError> {
         if !self.tokens.insert(token.to_string()) {
             return Err(BannedTokenStoreError::TokenAlreadyBanned);
         }
         Ok(())
     }
 
-    async fn is_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
+    async fn is_banned(
+        &self,
+        token: &str,
+    ) -> Result<bool, BannedTokenStoreError> {
         Ok(self.tokens.contains(token))
     }
 }
@@ -113,9 +119,6 @@ mod tests {
         assert_eq!(is_banned_result, Ok(true));
 
         let duplicate_result = store.store_token(empty_token).await;
-        assert_eq!(
-            duplicate_result,
-            Err(BannedTokenStoreError::TokenAlreadyBanned)
-        );
+        assert_eq!(duplicate_result, Err(BannedTokenStoreError::TokenAlreadyBanned));
     }
 }

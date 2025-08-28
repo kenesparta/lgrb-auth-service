@@ -6,6 +6,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum_extra::extract::CookieJar;
+use secrecy::{ExposeSecret, SecretBox};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -28,30 +29,24 @@ pub async fn verify_2fa(
     let email = validate_email(&request.email)?;
     let login_attempt_id = validate_login_attempt_id(&request.login_attempt_id)?;
     let two_fa_code = validate_two_fa_code(&request.two_fa_code)?;
-    let email = &Email::new(email.to_owned())?;
+    let email = &Email::new(SecretBox::new(Box::from(email.to_owned())))?;
 
     match state.two_fa_code_store.read().await.get_code(&email).await {
         Ok(stored_data) => {
             let (stored_login_attempt, stored_two_fa_code) = stored_data;
 
-            if stored_login_attempt.clone().id() != login_attempt_id {
+            if stored_login_attempt.clone().id().expose_secret() != login_attempt_id {
                 return Err(AuthAPIError::IncorrectCredentials);
             }
 
-            if stored_two_fa_code.clone().code() != two_fa_code {
+            if stored_two_fa_code.clone().code().expose_secret() != two_fa_code {
                 return Err(AuthAPIError::IncorrectCredentials);
             }
         }
         Err(_) => return Err(AuthAPIError::IncorrectCredentials),
     }
 
-    match state
-        .two_fa_code_store
-        .write()
-        .await
-        .remove_code(&email)
-        .await
-    {
+    match state.two_fa_code_store.write().await.remove_code(&email).await {
         Ok(()) => Ok((
             jar.add(generate_auth_cookie(&email)?)
                 .add(generate_refresh_cookie(&email)?),

@@ -10,6 +10,12 @@ pub enum BannedTokenStoreError {
 #[cfg_attr(test, automock)]
 #[async_trait::async_trait]
 pub trait BannedTokenStore: Send + Sync {
-    async fn store_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError>;
-    async fn is_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn store_token(
+        &mut self,
+        token: &str,
+    ) -> Result<(), BannedTokenStoreError>;
+    async fn is_banned(
+        &self,
+        token: &str,
+    ) -> Result<bool, BannedTokenStoreError>;
 }

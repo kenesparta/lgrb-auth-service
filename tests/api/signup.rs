@@ -57,10 +57,7 @@ async fn should_return_201_if_valid_input() {
         message: "User created successfully!".to_string(),
     };
 
-    assert_eq!(
-        response.json::<SignupResponse>().await.unwrap(),
-        expected_response
-    );
+    assert_eq!(response.json::<SignupResponse>().await.unwrap(), expected_response);
 
     app.clean_up().await;
 }
@@ -94,11 +91,7 @@ async fn should_return_400_if_invalid_input() {
         );
 
         assert_eq!(
-            response
-                .json::<ErrorResponse>()
-                .await
-                .expect("")
-                .error_message,
+            response.json::<ErrorResponse>().await.expect("").error_message,
             "Email or password incorrect"
         );
     }
@@ -124,11 +117,7 @@ async fn should_return_409_if_email_already_exists() {
     let response2 = app.post_signup(&tc).await;
     assert_eq!(response2.status().as_u16(), StatusCode::CONFLICT);
     assert_eq!(
-        response2
-            .json::<ErrorResponse>()
-            .await
-            .expect("")
-            .error_message,
+        response2.json::<ErrorResponse>().await.expect("").error_message,
         "User already exists"
     );
 

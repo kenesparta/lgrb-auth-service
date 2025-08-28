@@ -1,6 +1,7 @@
 use crate::domain::{Email, EmailError, Password, PasswordError};
+use secrecy::SecretBox;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct User {
     email: Email,
     password: Password,
@@ -20,9 +21,13 @@ pub enum UserError {
 }
 
 impl User {
-    pub fn new(email: String, password: String, requires_2fa: bool) -> Result<Self, UserError> {
-        let email = Email::new(email)?;
-        let password = Password::new(password)?;
+    pub fn new(
+        email: String,
+        password: String,
+        requires_2fa: bool,
+    ) -> Result<Self, UserError> {
+        let email = Email::new(SecretBox::new(Box::from(email)))?;
+        let password = Password::new(SecretBox::new(Box::from(password)))?;
         Ok(Self {
             email,
             password,

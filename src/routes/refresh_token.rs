@@ -1,11 +1,11 @@
 use crate::domain::{AuthAPIError, Email};
 use crate::utils::{
-    JWT_REFRESH_COOKIE_NAME, generate_auth_cookie, generate_refresh_cookie, generate_token_pair,
-    validate_token,
+    JWT_REFRESH_COOKIE_NAME, generate_auth_cookie, generate_refresh_cookie, generate_token_pair, validate_token,
 };
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum_extra::extract::CookieJar;
+use secrecy::SecretBox;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,9 +17,7 @@ pub struct RefreshTokenResponse {
 
 #[tracing::instrument(name = "RefreshToken", skip_all)]
 pub async fn refresh_token(jar: CookieJar) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
-    let refresh_cookie = jar
-        .get(JWT_REFRESH_COOKIE_NAME)
-        .ok_or(AuthAPIError::MissingToken)?;
+    let refresh_cookie = jar.get(JWT_REFRESH_COOKIE_NAME).ok_or(AuthAPIError::MissingToken)?;
 
     let refresh_token = refresh_cookie.value();
 
@@ -31,7 +29,7 @@ pub async fn refresh_token(jar: CookieJar) -> Result<(CookieJar, impl IntoRespon
         return Err(AuthAPIError::TokenNotValid);
     }
 
-    let email = &Email::new(claims.sub)?;
+    let email = &Email::new(SecretBox::new(Box::from(claims.sub)))?;
     let new_token_pair = generate_token_pair(&email)?;
 
     let response = RefreshTokenResponse {

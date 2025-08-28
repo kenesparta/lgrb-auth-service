@@ -15,7 +15,10 @@ impl RedisBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for RedisBannedTokenStore {
-    async fn store_token(&mut self, token: &str) -> Result<(), BannedTokenStoreError> {
+    async fn store_token(
+        &mut self,
+        token: &str,
+    ) -> Result<(), BannedTokenStoreError> {
         Ok(redis::cmd("SETEX")
             .arg(&get_key(token))
             .arg(*TOKEN_TTL_SECONDS)
@@ -25,7 +28,10 @@ impl BannedTokenStore for RedisBannedTokenStore {
             .map_err(|_| BannedTokenStoreError::UnexpectedError)?)
     }
 
-    async fn is_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
+    async fn is_banned(
+        &self,
+        token: &str,
+    ) -> Result<bool, BannedTokenStoreError> {
         redis::cmd("EXISTS")
             .arg(&get_key(token))
             .query_async(&mut self.conn.clone())

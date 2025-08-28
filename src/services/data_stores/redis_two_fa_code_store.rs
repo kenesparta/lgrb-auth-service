@@ -5,6 +5,7 @@ use crate::domain::{
 use crate::utils::TOKEN_TTL_SECONDS;
 use crate::utils::redis_env::TWO_FA_CODE_PREFIX;
 use redis::aio::MultiplexedConnection;
+use secrecy::{ExposeSecret, SecretBox};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -29,8 +30,8 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         code: TwoFACode,
     ) -> Result<(), TwoFACodeStoreError> {
         let two_fa = serde_json::to_string(&TwoFATuple(
-            login_attempt_id.as_ref().to_string(),
-            code.as_ref().to_string(),
+            login_attempt_id.as_ref().expose_secret().to_string(),
+            code.as_ref().expose_secret().to_string(),
         ))
         .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
@@ -43,7 +44,10 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?)
     }
 
-    async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
+    async fn remove_code(
+        &mut self,
+        email: &Email,
+    ) -> Result<(), TwoFACodeStoreError> {
         Ok(redis::cmd("DEL")
             .arg(&get_key(email))
             .query_async::<_, ()>(&mut self.conn.clone())
@@ -65,13 +69,13 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
 
         match value {
             Some(json_string) => {
-                let two_fa_tuple: TwoFATuple = serde_json::from_str(&json_string)
+                let two_fa_tuple: TwoFATuple =
+                    serde_json::from_str(&json_string).map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
+
+                let login_attempt_id = LoginAttemptId::new(SecretBox::new(Box::from(two_fa_tuple.0)))
                     .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
-                let login_attempt_id = LoginAttemptId::new(two_fa_tuple.0)
-                    .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
-
-                let two_fa_code = TwoFACode::new(two_fa_tuple.1)
+                let two_fa_code = TwoFACode::new(SecretBox::new(Box::from(two_fa_tuple.1)))
                     .map_err(|e| TwoFACodeStoreError::UnexpectedError(e.into()))?;
 
                 Ok((login_attempt_id, two_fa_code))
@@ -82,5 +86,5 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
 }
 
 fn get_key(email: &Email) -> String {
-    format!("{}{}", TWO_FA_CODE_PREFIX, email.as_ref())
+    format!("{}{}", TWO_FA_CODE_PREFIX, email.as_ref().expose_secret())
 }

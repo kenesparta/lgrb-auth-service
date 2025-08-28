@@ -57,9 +57,7 @@ mod tests {
     use super::*;
     use crate::app_state::AppState;
     use crate::domain::AuthAPIError;
-    use crate::domain::data_stores::{
-        MockBannedTokenStore, MockTwoFACodeStore, MockUserStore, UserStoreError,
-    };
+    use crate::domain::data_stores::{MockBannedTokenStore, MockTwoFACodeStore, MockUserStore, UserStoreError};
     use crate::services::MockEmailClient;
     use axum::Json;
     use axum::extract::State;
@@ -85,11 +83,10 @@ mod tests {
     #[tokio::test]
     async fn signup_unexpected_error_on_get_user() {
         let mut mock_store = MockUserStore::new();
-        mock_store.expect_add_user().times(1).returning(|_| {
-            Err(UserStoreError::UnexpectedError(eyre!(
-                "Mock database error"
-            )))
-        });
+        mock_store
+            .expect_add_user()
+            .times(1)
+            .returning(|_| Err(UserStoreError::UnexpectedError(eyre!("Mock database error"))));
 
         let state = create_app_state_with_mock(
             mock_store,
@@ -121,10 +118,7 @@ mod tests {
             requires_2fa: false,
         };
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(
-            result,
-            Err(AuthAPIError::EmailOrPasswordIncorrect)
-        ));
+        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
     }
 
     #[tokio::test]
@@ -142,10 +136,7 @@ mod tests {
         };
 
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(
-            result,
-            Err(AuthAPIError::EmailOrPasswordIncorrect)
-        ));
+        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
     }
 
     #[tokio::test]
@@ -163,10 +154,7 @@ mod tests {
         };
 
         let result = signup(State(state), Json(request)).await;
-        assert!(matches!(
-            result,
-            Err(AuthAPIError::EmailOrPasswordIncorrect)
-        ));
+        assert!(matches!(result, Err(AuthAPIError::EmailOrPasswordIncorrect)));
     }
 
     #[tokio::test]

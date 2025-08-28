@@ -41,13 +41,20 @@ pub fn make_span_with_request_id(request: &Request<Body>) -> Span {
 }
 
 // Logs an event indicating the start of a request.
-pub fn on_request(_request: &Request<Body>, _span: &Span) {
+pub fn on_request(
+    _request: &Request<Body>,
+    _span: &Span,
+) {
     tracing::event!(Level::INFO, "[REQUEST START]");
 }
 
 // Logs an event indicating the end of a request, including its latency and status code.
 // If the status code indicates an error (4xx or 5xx), it logs at the ERROR level.
-pub fn on_response(response: &Response, latency: Duration, _span: &Span) {
+pub fn on_response(
+    response: &Response,
+    latency: Duration,
+    _span: &Span,
+) {
     let status = response.status();
     let status_code = status.as_u16();
     let status_code_class = status_code / 100;

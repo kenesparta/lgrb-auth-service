@@ -28,7 +28,10 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
         Ok(())
     }
 
-    async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
+    async fn remove_code(
+        &mut self,
+        email: &Email,
+    ) -> Result<(), TwoFACodeStoreError> {
         self.codes.remove(email);
         Ok(())
     }
@@ -37,10 +40,7 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
         &self,
         email: &Email,
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
-        self.codes
-            .get(email)
-            .cloned()
-            .ok_or(TwoFACodeStoreError::UserNotFound)
+        self.codes.get(email).cloned().ok_or(TwoFACodeStoreError::UserNotFound)
     }
 }
 
@@ -49,17 +49,16 @@ mod tests {
     use super::*;
     use fake::Fake;
     use fake::faker::internet::en::SafeEmail;
+    use secrecy::SecretBox;
 
     #[tokio::test]
     async fn test_add_code_new_email() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = &Email::new(SafeEmail().fake()).unwrap();
+        let email = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 
-        let result = store
-            .add_code(email, login_attempt_id.clone(), code.clone())
-            .await;
+        let result = store.add_code(email, login_attempt_id.clone(), code.clone()).await;
 
         assert!(result.is_ok());
 
@@ -71,7 +70,7 @@ mod tests {
     #[tokio::test]
     async fn test_add_code_existing_email_overwrites() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = &Email::new(SafeEmail().fake()).unwrap();
+        let email = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
 
         let login_attempt_id_1 = LoginAttemptId::default();
         let code_1 = TwoFACode::default();
@@ -80,9 +79,7 @@ mod tests {
 
         let login_attempt_id_2 = LoginAttemptId::default();
         let code_2 = TwoFACode::default();
-        let result_2 = store
-            .add_code(email, login_attempt_id_2.clone(), code_2.clone())
-            .await;
+        let result_2 = store.add_code(email, login_attempt_id_2.clone(), code_2.clone()).await;
         assert!(result_2.is_ok());
 
         let stored_code = store.get_code(email).await.unwrap();
@@ -94,11 +91,11 @@ mod tests {
     async fn test_add_code_multiple_emails() {
         let mut store = HashmapTwoFACodeStore::default();
 
-        let email_1 = &Email::new(SafeEmail().fake()).unwrap();
+        let email_1 = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
         let login_attempt_id_1 = LoginAttemptId::default();
         let code_1 = TwoFACode::default();
 
-        let email_2 = &Email::new(SafeEmail().fake()).unwrap();
+        let email_2 = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
         let login_attempt_id_2 = LoginAttemptId::default();
         let code_2 = TwoFACode::default();
 
@@ -124,7 +121,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_code_existing_email() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = &Email::new(SafeEmail().fake()).unwrap();
+        let email = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 
@@ -144,7 +141,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_code_nonexistent_email() {
         let store = HashmapTwoFACodeStore::default();
-        let email = &Email::new(SafeEmail().fake()).unwrap();
+        let email = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
 
         let result = store.get_code(email).await;
         assert!(result.is_err());
@@ -154,7 +151,7 @@ mod tests {
     #[tokio::test]
     async fn test_remove_code_existing_email() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = &Email::new(SafeEmail().fake()).unwrap();
+        let email = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 
@@ -173,7 +170,7 @@ mod tests {
     #[tokio::test]
     async fn test_remove_code_nonexistent_email() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::new(SafeEmail().fake()).unwrap();
+        let email = Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
 
         let result = store.remove_code(&email).await;
         assert!(result.is_ok());
@@ -183,11 +180,11 @@ mod tests {
     async fn test_remove_code_does_not_affect_other_emails() {
         let mut store = HashmapTwoFACodeStore::default();
 
-        let email_1 = &Email::new(SafeEmail().fake()).unwrap();
+        let email_1 = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
         let login_attempt_id_1 = LoginAttemptId::default();
         let code_1 = TwoFACode::default();
 
-        let email_2 = &Email::new(SafeEmail().fake()).unwrap();
+        let email_2 = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
         let login_attempt_id_2 = LoginAttemptId::default();
         let code_2 = TwoFACode::default();
 
@@ -217,7 +214,7 @@ mod tests {
     #[tokio::test]
     async fn test_store_lifecycle() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = &Email::new(SafeEmail().fake()).unwrap();
+        let email = &Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
         assert!(store.get_code(email).await.is_err());
@@ -245,7 +242,7 @@ mod tests {
     #[tokio::test]
     async fn test_default_store_is_empty() {
         let store = HashmapTwoFACodeStore::default();
-        let email = Email::new(SafeEmail().fake()).unwrap();
+        let email = Email::new(SecretBox::new(SafeEmail().fake())).unwrap();
 
         let result = store.get_code(&email).await;
         assert!(result.is_err());

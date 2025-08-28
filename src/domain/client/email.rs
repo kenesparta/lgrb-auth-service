@@ -9,11 +9,11 @@ pub enum EmailClientError {
 }
 
 impl PartialEq for EmailClientError {
-    fn eq(&self, other: &Self) -> bool {
-        matches!(
-            (self, other),
-            (Self::UnexpectedError(_), Self::UnexpectedError(_))
-        )
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
+        matches!((self, other), (Self::UnexpectedError(_), Self::UnexpectedError(_)))
     }
 }
 
