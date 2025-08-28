@@ -6,6 +6,7 @@ use auth_service::grpc::auth_service::{
 use auth_service::utils::generate_auth_cookie;
 use fake::Fake;
 use fake::faker::internet::en::SafeEmail;
+use secrecy::SecretBox;
 use tonic::Request;
 use tonic::transport::Server;
 
@@ -29,7 +30,7 @@ async fn test_verify_token_valid() {
         .expect("Failed to connect to the gRPC server");
 
     let fake_email: String = SafeEmail().fake();
-    let email = &Email::new(fake_email).expect("Failed to create email");
+    let email = &Email::new(SecretBox::new(Box::from(fake_email))).expect("Failed to create email");
     let valid_token = generate_auth_cookie(email).expect("Failed to generate a token");
 
     let request = Request::new(VerifyTokenRequest {

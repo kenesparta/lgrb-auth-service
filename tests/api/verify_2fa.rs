@@ -5,6 +5,7 @@ use fake::Fake;
 use fake::faker::internet::en::{Password as FakePassword, SafeEmail};
 use fake::faker::number::en::NumberWithFormat;
 use reqwest::StatusCode;
+use secrecy::{ExposeSecret, SecretBox};
 use uuid::Uuid;
 
 #[tokio::test]
@@ -92,10 +93,7 @@ async fn should_return_401_if_incorrect_credentials() {
     });
 
     let response_login = app.post_login(case);
-    assert_eq!(
-        response_login.await.status().as_u16(),
-        StatusCode::PARTIAL_CONTENT
-    );
+    assert_eq!(response_login.await.status().as_u16(), StatusCode::PARTIAL_CONTENT);
 
     let new_fake_email: String = SafeEmail().fake();
     let case = &serde_json::json!({
@@ -105,10 +103,7 @@ async fn should_return_401_if_incorrect_credentials() {
     });
 
     let response_2fa = app.post_verify_2fa(case);
-    assert_eq!(
-        response_2fa.await.status().as_u16(),
-        StatusCode::UNAUTHORIZED
-    );
+    assert_eq!(response_2fa.await.status().as_u16(), StatusCode::UNAUTHORIZED);
 
     app.clean_up().await;
 }
@@ -134,12 +129,9 @@ async fn should_return_401_if_old_code() {
             "password": fake_password,
         }))
         .await;
-    assert_eq!(
-        first_response.status().as_u16(),
-        StatusCode::PARTIAL_CONTENT
-    );
+    assert_eq!(first_response.status().as_u16(), StatusCode::PARTIAL_CONTENT);
 
-    let email = &Email::new(fake_email.clone()).unwrap();
+    let email = &Email::new(SecretBox::new(Box::from(fake_email.clone()))).unwrap();
     let two_fa_store = {
         let guard = app.two_fa_code.read().await;
         guard.get_code(&email).await.unwrap().clone()
@@ -151,21 +143,15 @@ async fn should_return_401_if_old_code() {
             "password": fake_password,
         }))
         .await;
-    assert_eq!(
-        second_response.status().as_u16(),
-        StatusCode::PARTIAL_CONTENT
-    );
+    assert_eq!(second_response.status().as_u16(), StatusCode::PARTIAL_CONTENT);
 
     let case = &serde_json::json!({
         "email": fake_email,
-        "loginAttemptId": two_fa_store.clone().0.id(),
+        "loginAttemptId": two_fa_store.clone().0.id().expose_secret(),
         "2FACode": two_fa_store.clone().1.code(),
     });
     let response_2fa = app.post_verify_2fa(case);
-    assert_eq!(
-        response_2fa.await.status().as_u16(),
-        StatusCode::UNAUTHORIZED
-    );
+    assert_eq!(response_2fa.await.status().as_u16(), StatusCode::UNAUTHORIZED);
 
     app.clean_up().await;
 }
@@ -191,12 +177,9 @@ async fn should_return_200_if_correct_code() {
             "password": fake_password,
         }))
         .await;
-    assert_eq!(
-        first_response.status().as_u16(),
-        StatusCode::PARTIAL_CONTENT
-    );
+    assert_eq!(first_response.status().as_u16(), StatusCode::PARTIAL_CONTENT);
 
-    let email = &Email::new(fake_email.clone()).unwrap();
+    let email = &Email::new(SecretBox::new(Box::from(fake_email.clone()))).unwrap();
     let two_fa_store = {
         let guard = app.two_fa_code.read().await;
         guard.get_code(&email).await.unwrap().clone()
@@ -204,7 +187,7 @@ async fn should_return_200_if_correct_code() {
 
     let case = &serde_json::json!({
         "email": fake_email,
-        "loginAttemptId": two_fa_store.clone().0.id(),
+        "loginAttemptId": two_fa_store.clone().0.id().expose_secret(),
         "2FACode": two_fa_store.clone().1.code(),
     });
     let response_2fa = app.post_verify_2fa(case).await;
@@ -240,12 +223,9 @@ async fn should_return_401_if_same_code_twice() {
             "password": fake_password,
         }))
         .await;
-    assert_eq!(
-        first_response.status().as_u16(),
-        StatusCode::PARTIAL_CONTENT
-    );
+    assert_eq!(first_response.status().as_u16(), StatusCode::PARTIAL_CONTENT);
 
-    let email = &Email::new(fake_email.clone()).unwrap();
+    let email = &Email::new(SecretBox::new(Box::from(fake_email.clone()))).unwrap();
     let two_fa_store = {
         let guard = app.two_fa_code.read().await;
         guard.get_code(&email).await.unwrap().clone()
@@ -253,7 +233,7 @@ async fn should_return_401_if_same_code_twice() {
 
     let case = &serde_json::json!({
         "email": fake_email,
-        "loginAttemptId": two_fa_store.clone().0.id(),
+        "loginAttemptId": two_fa_store.clone().0.id().expose_secret(),
         "2FACode": two_fa_store.clone().1.code(),
     });
     let response_2fa = app.post_verify_2fa(case).await;
@@ -261,7 +241,7 @@ async fn should_return_401_if_same_code_twice() {
 
     let case = &serde_json::json!({
         "email": fake_email,
-        "loginAttemptId": two_fa_store.clone().0.id(),
+        "loginAttemptId": two_fa_store.clone().0.id().expose_secret(),
         "2FACode": two_fa_store.clone().1.code(),
     });
     let response_2fa = app.post_verify_2fa(case).await;

@@ -18,10 +18,7 @@ async fn should_return_401_if_invalid_token() {
     let mut app = TestApp::new().await;
 
     app.cookie_jar.add_cookie_str(
-        &format!(
-            "{}=invalid; HttpOnly; SameSite=Lax; Secure; Path=/",
-            JWT_COOKIE_NAME
-        ),
+        &format!("{}=invalid; HttpOnly; SameSite=Lax; Secure; Path=/", JWT_COOKIE_NAME),
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
 

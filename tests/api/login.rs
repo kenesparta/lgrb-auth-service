@@ -80,10 +80,7 @@ async fn should_return_401_if_incorrect_credentials() {
     });
 
     let response_login = app.post_login(case);
-    assert_eq!(
-        response_login.await.status().as_u16(),
-        StatusCode::UNAUTHORIZED
-    );
+    assert_eq!(response_login.await.status().as_u16(), StatusCode::UNAUTHORIZED);
     app.clean_up().await;
 }
 
