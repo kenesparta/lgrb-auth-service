@@ -1,6 +1,6 @@
 use auth_service::app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType};
-use auth_service::services::MockEmailClient;
 use auth_service::services::data_stores::{PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore};
+use auth_service::services::email::MockEmailClient;
 use auth_service::utils::{DATABASE_URL, REDIS_HOST_NAME, test};
 use auth_service::{Application, get_postgres_pool, get_redis_client};
 use reqwest::cookie::Jar;

@@ -2,7 +2,7 @@ use config::{Config, ConfigError, Environment, File};
 use lazy_static::lazy_static;
 use secrecy::SecretBox;
 use serde::{Deserialize, Serialize};
-use std::sync::OnceLock;
+use std::sync::{LazyLock, OnceLock};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
@@ -71,14 +71,22 @@ pub fn get_config() -> &'static AppConfig {
     CONFIG.get_or_init(|| AppConfig::from_env().expect("Failed to load configuration"))
 }
 
-lazy_static! {
-    pub static ref JWT_SECRET: SecretBox<String> = SecretBox::new(Box::from(get_config().jwt_secret.clone()));
-    pub static ref COOKIE_DOMAIN: String = get_config().cookie_domain.clone();
-    pub static ref DATABASE_URL: SecretBox<String> = SecretBox::new(Box::from(get_config().database_url.clone()));
-    pub static ref REDIS_HOST_NAME: String = get_config().redis_host_name.clone();
-    pub static ref CORS_ALLOWED_ORIGINS: String = get_config().cors_allowed_origins.clone();
-    pub static ref CAPTCHA_SITE_KEY: String = get_config().captcha_site_key.clone();
-    pub static ref CAPTCHA_SECRET_KEY: String = get_config().captcha_secret_key.clone();
-    pub static ref TOKEN_TTL_SECONDS: i64 = get_config().token_ttl_seconds;
-    pub static ref REFRESH_TOKEN_TTL_SECONDS: i64 = get_config().refresh_token_ttl_seconds;
-}
+pub static JWT_SECRET: LazyLock<SecretBox<String>> =
+    LazyLock::new(|| SecretBox::new(Box::from(get_config().jwt_secret.clone())));
+
+pub static COOKIE_DOMAIN: LazyLock<String> = LazyLock::new(|| get_config().cookie_domain.clone());
+
+pub static DATABASE_URL: LazyLock<SecretBox<String>> =
+    LazyLock::new(|| SecretBox::new(Box::from(get_config().database_url.clone())));
+
+pub static REDIS_HOST_NAME: LazyLock<String> = LazyLock::new(|| get_config().redis_host_name.clone());
+
+pub static CORS_ALLOWED_ORIGINS: LazyLock<String> = LazyLock::new(|| get_config().cors_allowed_origins.clone());
+
+pub static CAPTCHA_SITE_KEY: LazyLock<String> = LazyLock::new(|| get_config().captcha_site_key.clone());
+
+pub static CAPTCHA_SECRET_KEY: LazyLock<String> = LazyLock::new(|| get_config().captcha_secret_key.clone());
+
+pub static TOKEN_TTL_SECONDS: LazyLock<i64> = LazyLock::new(|| get_config().token_ttl_seconds);
+
+pub static REFRESH_TOKEN_TTL_SECONDS: LazyLock<i64> = LazyLock::new(|| get_config().refresh_token_ttl_seconds);

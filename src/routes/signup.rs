@@ -58,7 +58,7 @@ mod tests {
     use crate::app_state::AppState;
     use crate::domain::AuthAPIError;
     use crate::domain::data_stores::{MockBannedTokenStore, MockTwoFACodeStore, MockUserStore, UserStoreError};
-    use crate::services::MockEmailClient;
+    use crate::services::email::MockEmailClient;
     use axum::Json;
     use axum::extract::State;
     use fake::Fake;
