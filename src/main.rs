@@ -1,7 +1,7 @@
 use auth_service::app_state::AppState;
 use auth_service::grpc::auth_service::create_grpc_service;
-use auth_service::services::MockEmailClient;
 use auth_service::services::data_stores::{PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore};
+use auth_service::services::email::SesEmailClient;
 use auth_service::utils::{DATABASE_URL, REDIS_HOST_NAME, init_tracing, prod};
 use auth_service::{Application, get_postgres_pool, get_redis_client};
 use sqlx::PgPool;
@@ -15,11 +15,15 @@ async fn main() {
     color_eyre::install().expect("Failed to install color_eyre");
     init_tracing().expect("Failed to initialize tracing");
     let redis_client = configure_redis().await;
+    let ses_client = SesEmailClient::new("us-east-1", "auth@rustybootcamp.xyz".to_owned())
+        .await
+        .expect("SesEmailClient creation failed");
+
     let app_state = AppState::new(
         Arc::new(RwLock::new(PostgresUserStore::new(configure_postgresql().await))),
         Arc::new(RwLock::new(RedisBannedTokenStore::new(redis_client.clone()))),
         Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_client))),
-        Arc::new(RwLock::new(MockEmailClient::new())),
+        Arc::new(RwLock::new(ses_client)),
     );
 
     let http_app = Application::build(app_state, prod::APP_ADDRESS)
