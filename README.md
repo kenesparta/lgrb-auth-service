@@ -1,6 +1,8 @@
-# lgrb-auth-service
+# Let's Get Rusty bootcamp auth service
 
-Authentication service with optional email-based 2FA, HTTP (Axum) and gRPC (Tonic) interfaces, JWT cookies, PostgreSQL database, Redis caching, and a clean modular architecture. This README is generated from the actual codebase to ensure accuracy.
+Authentication service with optional email-based 2FA, HTTP (Axum) and gRPC (Tonic) interfaces, JWT cookies, PostgreSQL
+database, Redis caching, and a clean modular architecture. This README is generated from the actual codebase to ensure
+accuracy.
 
 ## Features
 
@@ -22,10 +24,11 @@ Authentication service with optional email-based 2FA, HTTP (Axum) and gRPC (Toni
 
 - Domain: core types and business rules (Email, Password, User, TwoFACode, etc.)
 - Services: pluggable data stores with multiple implementations:
-  - HashMap stores for development/testing (in-memory)
-  - PostgreSQL store for persistent user data (production)
-  - Redis store for banned token management (production)
-  - Mock email client for development and testing
+    - HashMap stores for development/testing (in-memory)
+    - PostgreSQL store for persistent user data (production)
+    - Redis store for banned token management (production)
+    - AWS SES email client for production email delivery
+    - Mock email client for development and testing
 - Database: PostgreSQL with SQLx migrations for schema management
 - HTTP: Axum routes wired in src/lib.rs with comprehensive error handling
 - gRPC: Tonic service generated from proto/auth_service.proto
@@ -36,25 +39,50 @@ HTTP server binds to `0.0.0.0:3000` by default; gRPC server binds to `0.0.0.0:50
 
 ## Configuration
 
-Environment variables (loadable via .env thanks to dotenvy):
+The application supports two configuration methods:
+
+### Environment Variables
+
+Environment variables (loadable via .env thanks to dotenvy) - all use AUTH_LGRB_ prefix:
 
 **Required:**
-- JWT_SECRET: secret used to sign JWTs
-- COOKIE_DOMAIN: cookie Domain attribute (e.g., localhost)
-- DATABASE_URL: PostgreSQL connection string (e.g., postgresql://user:password@localhost/dbname)
+
+- AUTH_LGRB_JWT_SECRET: secret used to sign JWTs
+- AUTH_LGRB_COOKIE_DOMAIN: cookie Domain attribute (e.g., localhost)
+- AUTH_LGRB_DATABASE_URL: PostgreSQL connection string (e.g., postgresql://user:password@localhost/dbname)
 
 **Optional:**
-- CORS_ALLOWED_ORIGINS (default: http://127.0.0.1,http://localhost): comma-separated list of allowed origins
-- REDIS_HOST_NAME (default: 127.0.0.1): Redis server hostname for banned token storage
-- CAPTCHA_SITE_KEY: for UI integration (compose wiring)
-- CAPTCHA_SECRET_KEY: used by verify_captcha module
 
-Token and cookie parameters (from code):
+- AUTH_LGRB_CORS_ALLOWED_ORIGINS (default: http://127.0.0.1,http://localhost): comma-separated list of allowed origins
+- AUTH_LGRB_REDIS_HOST_NAME (default: 127.0.0.1): Redis server hostname for banned token storage
+- AUTH_LGRB_CAPTCHA_SITE_KEY: for UI integration (compose wiring)
+- AUTH_LGRB_CAPTCHA_SECRET_KEY: used by verify_captcha module
+- AUTH_LGRB_TOKEN_TTL_SECONDS (default: 600): access token lifetime in seconds
+- AUTH_LGRB_REFRESH_TOKEN_TTL_SECONDS (default: 3600): refresh token lifetime in seconds
+- AUTH_LGRB_POSTGRES_PASSWORD: PostgreSQL password for containerized deployments
+
+### YAML Configuration
+
+Alternative configuration via config.yaml file with cleaner syntax:
+
+```yaml
+jwt_secret: "your-secret"
+cookie_domain: "localhost"
+database_url: "postgresql://user:password@localhost/dbname"
+redis_host_name: "127.0.0.1"
+cors_allowed_origins: "http://localhost,http://127.0.0.1"
+captcha_site_key: "your-key"
+captcha_secret_key: "your-secret"
+token_ttl_seconds: 600
+refresh_token_ttl_seconds: 3600
+```
+
+Token and cookie parameters:
 
 - Cookie names: jwt (access), jwt-refresh (refresh)
-- Access token TTL: 600 seconds
-- Refresh token TTL: 3600 seconds
-- Cookies are HttpOnly; SameSite=Lax; Path=/; Domain from COOKIE_DOMAIN
+- Access token TTL: configurable via AUTH_LGRB_TOKEN_TTL_SECONDS (default: 600 seconds)
+- Refresh token TTL: configurable via AUTH_LGRB_REFRESH_TOKEN_TTL_SECONDS (default: 3600 seconds)
+- Cookies are HttpOnly; SameSite=Lax; Path=/; Domain from AUTH_LGRB_COOKIE_DOMAIN
 
 ## Run locally
 
@@ -64,9 +92,9 @@ Prerequisites:
 - PostgreSQL 12+ (for persistent storage)
 - Redis 6+ (optional, for production-like banned token storage)
 - Set env vars (or create a .env in repo root):
-    - JWT_SECRET=my-secret
-    - COOKIE_DOMAIN=localhost
-    - DATABASE_URL=postgresql://user:password@localhost/auth_db
+    - AUTH_LGRB_JWT_SECRET=my-secret
+    - AUTH_LGRB_COOKIE_DOMAIN=localhost
+    - AUTH_LGRB_DATABASE_URL=postgresql://user:password@localhost/auth_db
 
 Database setup:
 
@@ -79,26 +107,48 @@ Run:
 - HTTP: http://localhost:3000
 - gRPC: 127.0.0.1:50051 (plaintext by default in local)
 
-For development with in-memory stores (no database required), the application will fall back to HashMap implementations when database connections fail.
+For development with in-memory stores (no database required), the application will fall back to HashMap implementations
+when database connections fail.
 
 ## Docker
 
 Build and run image:
 
 - `docker build -t auth-service .`
-- `docker run -e JWT_SECRET=... -e COOKIE_DOMAIN=localhost -e DATABASE_URL=postgresql://... -p 3000:3000 -p 50051:50051 auth-service`
+-
+
+`docker run -e AUTH_LGRB_JWT_SECRET=... -e AUTH_LGRB_COOKIE_DOMAIN=localhost -e AUTH_LGRB_DATABASE_URL=postgresql://... -p 3000:3000 -p 50051:50051 auth-service`
 
 Docker Compose (recommended):
 
-- Ensure env vars in your shell or a `.env` file (includes DATABASE_URL for PostgreSQL)
+- Ensure env vars in your shell or a `.env` file (includes AUTH_LGRB_DATABASE_URL for PostgreSQL)
 - docker compose up
 - Ports: 3000->3000 (HTTP), 50051->50051 (gRPC)
-- Compose typically includes PostgreSQL and Redis services
+- Compose includes PostgreSQL 17.6 and Redis 8.2 Alpine services
+- All environment variables use AUTH_LGRB_ prefix for consistency
 
 Image details:
 
 - Multi-stage with cargo-chef for dependency caching
 - Final image based on Ubuntu Chiseled (scratch rootfs) for minimal surface
+
+## Email Service Configuration
+
+The application supports two email service implementations:
+
+### AWS SES (Production)
+
+- **Default in production**: AWS Simple Email Service for reliable email delivery
+- **Region**: Currently configured for `us-east-1` (hardcoded in main.rs)
+- **From Email**: Currently set to `auth@rustybootcamp.xyz` (hardcoded in main.rs)
+- **AWS Credentials**: Uses default AWS credential chain (IAM roles, environment variables, etc.)
+- **Permissions Required**: `ses:SendEmail` for the configured from address
+
+### Mock Email Client (Development/Testing)
+
+- **Default in tests**: In-memory mock that logs email attempts without sending
+- **Automatic fallback**: Used when AWS SES client creation fails
+- **No configuration required**: Works out of the box for development
 
 ## Database Migrations
 
@@ -110,11 +160,13 @@ The project uses SQLx for database migrations located in the `migrations/` direc
 - To revert: `sqlx migrate revert`
 
 Database schema:
+
 ```sql
-CREATE TABLE users (
-    email TEXT PRIMARY KEY,
-    password_hash TEXT NOT NULL,
-    requires_2fa BOOLEAN NOT NULL DEFAULT FALSE
+CREATE TABLE users
+(
+    email         TEXT PRIMARY KEY,
+    password_hash TEXT    NOT NULL,
+    requires_2fa  BOOLEAN NOT NULL DEFAULT FALSE
 );
 ```
 
@@ -218,21 +270,24 @@ A simple Google reCAPTCHA v3 verification helper exists (src/routes/verify_captc
     - `make grpc-proto` (grpcurl using local proto)
 
 Test environment setup:
+
 - Tests automatically use in-memory HashMap stores
 - No database setup required for unit/integration tests
-- For full stack testing with database: set DATABASE_URL and run migrations
+- For full stack testing with database: set AUTH_LGRB_DATABASE_URL and run migrations
 
 ## Troubleshooting
 
-- Panic at startup: ensure JWT_SECRET, COOKIE_DOMAIN, and DATABASE_URL are set (non-empty)
-- Database connection failed: verify PostgreSQL is running and DATABASE_URL is correct
+- Panic at startup: ensure AUTH_LGRB_JWT_SECRET, AUTH_LGRB_COOKIE_DOMAIN, and AUTH_LGRB_DATABASE_URL are set (non-empty)
+- Database connection failed: verify PostgreSQL is running and AUTH_LGRB_DATABASE_URL is correct
 - Migration errors: ensure database exists and run `sqlx migrate run`
-- Redis connection issues: check REDIS_HOST_NAME or use HashMap stores for development
-- CORS blocked: set CORS_ALLOWED_ORIGINS to include your frontend origin
-- Cookies aren't set in browser: ensure COOKIE_DOMAIN matches the host you are using
+- Redis connection issues: check AUTH_LGRB_REDIS_HOST_NAME or use HashMap stores for development
+- CORS blocked: set AUTH_LGRB_CORS_ALLOWED_ORIGINS to include your frontend origin
+- Cookies aren't set in browser: ensure AUTH_LGRB_COOKIE_DOMAIN matches the host you are using
 - 206 on login: this indicates 2FA is enabled; proceed with /verify-2fa
 - Application falls back to HashMap stores: this occurs when database connections fail (acceptable for development)
+- AWS SES email errors: verify AWS credentials and SES permissions for the configured from address
+- Email service fallback: application uses mock email client when AWS SES initialization fails
 
 ## License
 
-MIT (or the license applicable to your project)
+MIT
